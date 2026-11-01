@@ -2716,7 +2716,7 @@
         content: "";
       }
       .stars {
-        color: #ffd166;
+        color: #83edd3;
         letter-spacing: 1px;
         font-size: 13px;
       }
@@ -2757,6 +2757,22 @@
       #startButton.as-secondary {
         background: #2a3b57;
         box-shadow: none;
+      }
+      .round-score .pass-result {
+        font-size: 18px;
+      }
+      .round-score .pass-detail {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        color: #d6e6f5;
+        line-height: 1.5;
+      }
+      .round-score .pass-goal {
+        font-size: 13px;
+      }
+      .level-tile.passed {
+        border-color: #4fbf8f88;
       }
       .round-score .level-result-stars {
         font-size: 24px;
@@ -2880,8 +2896,8 @@
         <div class="level-bar" id="levelBar">
           <button class="level-pick" id="levelPickButton" type="button" aria-haspopup="dialog">
             <span class="level-pick-main"
-              ><b id="levelPickTitle">Level 1</b><span class="stars" id="levelPickStars">☆☆☆</span></span
-            >
+              ><b id="levelPickTitle">Level 1</b><span class="stars" id="levelPickStars"></span
+            ></span>
             <small id="levelPickDesc"></small>
           </button>
           <div class="play-type" role="group" aria-label="Play type">
@@ -3272,15 +3288,14 @@
         </div>
         <div class="overall-grid" id="overallStats"></div>
         <h2 class="block-title">Progress by game</h2>
-        <p class="muted-note">Highest level passed and stars earned. Practice rounds never count.</p>
+        <p class="muted-note">Highest level passed. Practice rounds never count.</p>
         <div class="stat-cards" id="modeStats"></div>
         <div class="score-explain">
           <b>How levels work</b>
           <p>
-            Every game has a fixed ladder of levels. Completing a level earns ★ and unlocks the next one.
-            Extra stars come from finishing faster and with fewer mistakes; each level shows its exact star
-            targets before you start. Practice mode keeps the free settings but saves nothing to progress.
-            These are game metrics, not medical measurements.
+            Every game has a fixed ladder of levels. Each level has one pass condition, shown before you
+            start. Pass it to unlock the next level; otherwise retry. Practice mode keeps the free settings
+            and saves nothing to progress. These are game metrics, not medical measurements.
           </p>
         </div>
       </section>
@@ -5061,7 +5076,9 @@
         return total ? Math.round((100 * hits) / total) : 0;
       }
       function updateSpeedSummary() {
-        $("speedDetails").hidden = mode !== "speed" || (state !== "playing" && state !== "finished");
+        // The 0–1,000 score bar only means something in Practice; levels use the pass condition.
+        $("speedDetails").hidden =
+          !practiceMode || mode !== "speed" || (state !== "playing" && state !== "finished");
         $("speedTargetBadge").hidden = mode !== "speed" || state !== "playing";
         $("speedPoints").textContent = speedScoreNow().toLocaleString("en-US") + " / 1,000";
         $("speedHits").textContent = String(speedHits);
@@ -5096,8 +5113,8 @@
       function speedProgressText() {
         const level = activeLevel();
         if (!level) return `Score: ${speedScoreNow()} / 1,000`;
-        const [, , h3] = speedStarHits(level);
-        return `${speedHits} / ${h3} for ★★★ · misses ${speedMisses}`;
+        const [, h2] = speedStarHits(level);
+        return `${speedHits} / ${h2} to pass · misses ${speedMisses} (max 1)`;
       }
       function completeSpeedTarget(wasCorrect, reason, now) {
         if (mode !== "speed" || state !== "playing" || speedTargetKey == null) return;
@@ -5639,7 +5656,9 @@
             : "—";
           showOverlay(
             "🎯 Round complete!",
-            `${speedCategoryLabel()} · Score ${completedRound.score} / 1,000 · ${speedHits} hits · ${speedMisses} missed (${speedTimeouts} timeouts) · ${speedAccuracy(speedHits, speedMisses)}% accuracy. Average correct response: ${avg}s.`,
+            practiceMode
+              ? `${speedCategoryLabel()} · Score ${completedRound.score} / 1,000 · ${speedHits} hits · ${speedMisses} missed (${speedTimeouts} timeouts) · ${speedAccuracy(speedHits, speedMisses)}% accuracy. Average correct response: ${avg}s.`
+              : `Average correct response: ${avg}s`,
             "Play again",
           );
           renderAnalysis();
@@ -6658,19 +6677,27 @@
           (r) => r.schema === 2 && !r.practice && r.game === game && (r.lv || 1) === ladderVersion(game),
         );
       }
-      function bestStarsByLevel(game) {
-        const best = new Map();
-        for (const r of levelRounds(game)) best.set(r.level, Math.max(best.get(r.level) || 0, r.stars || 0));
-        return best;
+      // One pass condition per level (internally the old "★★" bar). Stars are still computed and
+      // stored per round for tuning, but never shown. Unlocking needs a pass.
+      const PASS_STARS = 2;
+      function isPassed(r) {
+        return (r.stars || 0) >= PASS_STARS;
+      }
+      function passedLevels(game) {
+        return new Set(
+          levelRounds(game)
+            .filter(isPassed)
+            .map((r) => r.level),
+        );
       }
       function highestPassed(game) {
-        const best = bestStarsByLevel(game);
+        const passed = passedLevels(game);
         let n = 0;
-        while (best.get(n + 1) >= 1) n++;
+        while (passed.has(n + 1)) n++;
         return n;
       }
       function isUnlocked(game, n) {
-        return n === 1 || (bestStarsByLevel(game).get(n - 1) || 0) >= 1;
+        return n === 1 || passedLevels(game).has(n - 1);
       }
       function currentLevelNumber(game = mode) {
         const max = ladder(game).length;
@@ -6681,8 +6708,8 @@
         if (practiceMode || !LEVEL_LADDERS[mode]) return null;
         return ladder()[currentLevelNumber() - 1] || null;
       }
-      function starString(n, total = 3) {
-        return "★".repeat(n) + "☆".repeat(Math.max(0, total - n));
+      function passMark(game, n) {
+        return passedLevels(game).has(n) ? "✓" : "";
       }
       function levelSummary(game, L) {
         if (game === "focus")
@@ -6705,23 +6732,25 @@
         return "";
       }
       // Short, scannable goals: the round may be 20 seconds, so reading must take ~3.
-      function levelGoals(game, L) {
-        if (game === "speed") {
-          const [h1, h2, h3] = speedStarHits(L);
-          return [`${h1} correct taps`, `${h2} correct · ≤ 1 miss`, `${h3} correct · no misses`];
-        }
+      // The single pass condition, short enough to read in two seconds.
+      function passGoal(game, L) {
         const mistakes = (m) => (m ? `≤ ${m} mistake${m === 1 ? "" : "s"}` : "no mistakes");
-        if (game === "focus" || game === "category")
-          return [
-            Number.isFinite(L.time) ? `Finish in ${L.time}s` : "Finish",
-            `≤ ${L.t2}s · ${mistakes(L.m2)}`,
-            `≤ ${L.t3}s · ${mistakes(L.m3)}`,
-          ];
-        return [
-          game === "pattern" && L.backward ? "Correct, backwards" : "Correct",
-          `≤ ${L.t2}s`,
-          `≤ ${L.t3}s`,
-        ];
+        if (game === "speed") {
+          const [, h2] = speedStarHits(L);
+          return `${h2} correct taps · ≤ 1 miss`;
+        }
+        if (game === "focus" || game === "category") return `Finish in ≤ ${L.t2}s · ${mistakes(L.m2)}`;
+        return `${game === "pattern" && L.backward ? "Correct, backwards," : "Correct"} in ≤ ${L.t2}s`;
+      }
+      function roundOutcomeText(r) {
+        const secs = ((Number(r.elapsedMs) || 0) / 1000).toFixed(1);
+        if (r.game === "speed")
+          return `You: ${r.found} correct · ${r.misses ?? 0} miss${r.misses === 1 ? "" : "es"}`;
+        if (r.game === "focus" || r.game === "category")
+          return r.outcome === "win"
+            ? `You: ${secs}s · ${r.mistakes} mistake${r.mistakes === 1 ? "" : "s"}`
+            : `You: found ${r.found} of ${r.count}`;
+        return r.outcome === "win" && !r.mistakes ? `You: correct in ${secs}s` : "You: not correct";
       }
       function speedStarHits(L) {
         return [L.s1, L.s2, L.s3].map((s) => Math.ceil((s / 1000) * L.goal));
@@ -6753,7 +6782,7 @@
         if (!practiceMode && L) {
           fields.level = currentLevelNumber();
           fields.stars = starsFor(mode, L, round);
-          fields.passed = fields.stars >= 1;
+          fields.passed = fields.stars >= PASS_STARS;
         }
         return fields;
       }
@@ -6852,7 +6881,7 @@
         const n = currentLevelNumber(),
           L = ladder()[n - 1];
         $("levelPickTitle").textContent = `Level ${n} / ${ladder().length}`;
-        $("levelPickStars").textContent = starString(bestStarsByLevel(mode).get(n) || 0);
+        $("levelPickStars").textContent = passMark(mode, n);
         $("levelPickDesc").textContent = levelSummary(mode, L) + " ▾";
       }
       function decorateLevelIntro() {
@@ -6870,22 +6899,14 @@
         const n = currentLevelNumber();
         $("overlayTitle").textContent =
           `Level ${n} · ${$("overlayTitle").textContent.replace(/ [^\w\s]+$/u, "")}`;
-        renderGoals(banner, levelGoals(mode, L), bestStarsByLevel(mode).get(n) || 0);
+        banner.replaceChildren();
+        const goal = document.createElement("strong");
+        goal.className = "pass-goal";
+        goal.textContent = "To pass: " + passGoal(mode, L);
+        banner.append(goal);
         banner.hidden = false;
       }
-      function renderGoals(container, goals, earned) {
-        container.replaceChildren();
-        const list = document.createElement("ul");
-        list.className = "goal-list";
-        goals.forEach((g, i) => {
-          const li = document.createElement("li");
-          const s = document.createElement("span");
-          s.textContent = (i < earned ? "★".repeat(i + 1) : "☆".repeat(i + 1)) + " ";
-          li.append(s, document.createTextNode(g));
-          list.append(li);
-        });
-        container.append(list);
-      }
+
       function showRoundScore(round) {
         const banner = $("roundScore");
         if (!round) return;
@@ -6901,20 +6922,21 @@
           return;
         }
         const L = ladder(round.game)[round.level - 1];
-        const best = bestStarsByLevel(round.game).get(round.level) || 0;
-        const stars = document.createElement("span");
-        stars.className = "level-result-stars";
-        stars.textContent = starString(round.stars);
         const line = document.createElement("strong");
-        line.textContent = round.passed ? `Level ${round.level} passed` : `Level ${round.level} not passed`;
-        banner.append(stars, line);
-        if (best > round.stars) banner.append(document.createTextNode(`Your best here: ${starString(best)}`));
-        renderGoalsInto(banner, levelGoals(round.game, L), round.stars);
+        line.className = "pass-result";
+        line.textContent = round.passed ? `✓ Level ${round.level} passed` : `✗ Not passed`;
+        const need = document.createElement("span");
+        need.className = "pass-detail";
+        need.textContent = `Needed: ${passGoal(round.game, L)}`;
+        const you = document.createElement("span");
+        you.className = "pass-detail";
+        you.textContent = roundOutcomeText(round);
+        banner.append(line, need, you);
         if (!round.passed) banner.classList.add("failed");
         const hasNext = round.level < ladder(round.game).length;
         if (round.passed && hasNext) {
           $("nextLevelButton").hidden = false;
-          $("startButton").textContent = round.stars < 3 ? "Retry for ★★★" : "Replay";
+          $("startButton").textContent = "Replay";
           $("startButton").classList.add("as-secondary");
         } else {
           $("startButton").textContent = round.passed ? "Replay level" : "Retry level";
@@ -6923,33 +6945,31 @@
           banner.append(document.createTextNode(`🏆 All ${ladder(round.game).length} levels complete!`));
         updateLevelBar();
       }
-      function renderGoalsInto(container, goals, earned) {
-        const holder = document.createElement("div");
-        renderGoals(holder, goals, earned);
-        container.append(holder.firstChild);
-      }
       function openLevelDialog() {
         if (practiceMode || !LEVEL_LADDERS[mode]) return;
         const grid = $("levelGrid");
         grid.replaceChildren();
-        const best = bestStarsByLevel(mode),
+        const passed = passedLevels(mode),
           current = currentLevelNumber();
         $("levelDialogTitle").textContent = GAME_NAMES[mode] + " · Levels";
-        const total = [...best.values()].reduce((s, n) => s + n, 0);
         $("levelDialogNote").textContent =
-          `${highestPassed(mode)} / ${ladder().length} passed · ${total} / ${ladder().length * 3} ★. Pass a level to unlock the next.`;
+          `${highestPassed(mode)} / ${ladder().length} passed. Pass a level to unlock the next.`;
         ladder().forEach((L, i) => {
           const n = i + 1,
             open = isUnlocked(mode, n);
           const b = document.createElement("button");
           b.type = "button";
-          b.className = "level-tile" + (n === current ? " current" : "") + (open ? "" : " locked");
+          b.className =
+            "level-tile" +
+            (n === current ? " current" : "") +
+            (open ? "" : " locked") +
+            (passed.has(n) ? " passed" : "");
           b.disabled = !open;
           const num = document.createElement("b");
           num.textContent = open ? String(n) : "🔒";
           const st = document.createElement("span");
           st.className = "stars";
-          st.textContent = starString(best.get(n) || 0);
+          st.textContent = passed.has(n) ? "✓ passed" : open ? "open" : "";
           const desc = document.createElement("small");
           desc.textContent = levelSummary(mode, L);
           b.append(num, st, desc);
@@ -6986,9 +7006,7 @@
         if (!$("statsScreen")) return;
         const all = activeRounds();
         if (LEVEL_LADDERS[mode]) {
-          const best = bestStarsByLevel(mode);
-          const total = [...best.values()].reduce((s, n) => s + n, 0);
-          $("playBest").innerHTML = `★ <b>${total}</b>`;
+          $("playBest").innerHTML = `✓ <b>${highestPassed(mode)}</b>/${ladder().length}`;
           $("playScoreMini").textContent =
             `${GAME_NAMES[mode]} · ${highestPassed(mode)} / ${ladder().length} levels passed`;
         }
@@ -6999,25 +7017,28 @@
       function renderStats(all) {
         const container = $("overallStats");
         container.replaceChildren();
-        let stars = 0,
-          passed = 0,
+        let passed = 0,
           levels = 0;
         for (const g of LEVEL_GAMES) {
-          stars += [...bestStarsByLevel(g).values()].reduce((s, n) => s + n, 0);
           passed += highestPassed(g);
           levels += ladder(g).length;
         }
-        addMetric(container, `${stars}`, `Stars of ${levels * 3}`);
-        addMetric(container, `${passed}`, `Levels of ${levels}`);
-        addMetric(container, all.filter((r) => r.schema === 2).length, "Rounds played");
+        const levelRows = LEVEL_GAMES.flatMap((g) => levelRounds(g));
+        addMetric(container, `${passed}/${levels}`, "Levels passed");
+        addMetric(container, levelRows.length, "Level rounds");
+        addMetric(
+          container,
+          levelRows.length
+            ? Math.round((100 * levelRows.filter(isPassed).length) / levelRows.length) + "%"
+            : "—",
+          "Pass rate",
+        );
         const cards = $("modeStats");
         cards.replaceChildren();
         for (const g of LEVEL_GAMES) {
           const rows = levelRounds(g),
             practice = all.filter((r) => r.schema === 2 && r.practice && r.game === g).length;
-          const best = bestStarsByLevel(g),
-            gStars = [...best.values()].reduce((s, n) => s + n, 0),
-            top = highestPassed(g),
+          const top = highestPassed(g),
             max = ladder(g).length;
           const card = document.createElement("div");
           card.className = "mode-stat-card";
@@ -7028,9 +7049,7 @@
           const sub = document.createElement("div");
           sub.className = "mode-sub";
           const recent = rows.slice(0, 20);
-          const rate = recent.length
-            ? Math.round((100 * recent.filter((r) => r.passed).length) / recent.length)
-            : 0;
+          const rate = recent.length ? Math.round((100 * recent.filter(isPassed).length) / recent.length) : 0;
           sub.textContent = `${rows.length} level rounds${recent.length ? ` · ${rate}% passed (last ${recent.length})` : ""}${practice ? ` · ${practice} practice` : ""}`;
           const bar = document.createElement("div");
           bar.className = "progress-bar";
@@ -7040,18 +7059,13 @@
           info.append(title, sub, bar);
           const figures = document.createElement("div");
           figures.className = "mode-figures";
-          for (const [value, caption] of [
-            [`${top}/${max}`, "Level"],
-            [`${gStars}`, "Stars"],
-          ]) {
-            const box = document.createElement("div");
-            const strong = document.createElement("strong");
-            strong.textContent = value;
-            const small = document.createElement("small");
-            small.textContent = caption;
-            box.append(strong, small);
-            figures.append(box);
-          }
+          const box = document.createElement("div");
+          const strong = document.createElement("strong");
+          strong.textContent = `${top}/${max}`;
+          const small = document.createElement("small");
+          small.textContent = "Levels passed";
+          box.append(strong, small);
+          figures.append(box);
           card.append(info, figures);
           cards.append(card);
         }
@@ -7068,7 +7082,6 @@
           return String(iso);
         }
       }
-      const STAR_COLORS = ["#ff8e9a", "#81b7ff", "#83edd3", "#ffd166"];
       function historySvg(tag, attrs) {
         const el = document.createElementNS(NS, tag);
         for (const [name, val] of Object.entries(attrs)) el.setAttribute(name, val);
@@ -7080,7 +7093,7 @@
           r.game === "speed"
             ? `${r.found} hits · ${r.misses ?? 0} missed · ${r.score} pts`
             : `${secs}s · ${r.mistakes} mistake${r.mistakes === 1 ? "" : "s"}`;
-        return `${formatDate(r.at)} · Level ${r.level} · ${starString(r.stars)} · ${extra}`;
+        return `${formatDate(r.at)} · Level ${r.level} · ${isPassed(r) ? "✓ passed" : "✗ not passed"} · ${extra}`;
       }
       function buildLevelChart(game, rows, windowSize) {
         const max = ladder(game).length;
@@ -7098,12 +7111,11 @@
         const shown = rows.slice(0, windowSize).reverse();
         const kpis = document.createElement("div");
         kpis.className = "history-kpis";
-        const rate = Math.round((100 * shown.filter((r) => r.passed).length) / shown.length);
-        const stars = [...bestStarsByLevel(game).values()].reduce((s, n) => s + n, 0);
+        const rate = Math.round((100 * shown.filter(isPassed).length) / shown.length);
         for (const [label, val] of [
           ["Highest passed", `${highestPassed(game)}/${max}`],
           [`Pass rate (${shown.length})`, rate + "%"],
-          ["Stars", `${stars}/${max * 3}`],
+          ["Rounds", String(rows.length)],
         ]) {
           const box = document.createElement("div");
           box.className = "history-kpi";
@@ -7159,7 +7171,7 @@
         let reached = 0,
           d = "";
         shown.forEach((r, i) => {
-          if (r.passed) reached = Math.max(reached, r.level);
+          if (isPassed(r)) reached = Math.max(reached, r.level);
           if (reached) d += `${d ? "L" : "M"}${x(i).toFixed(1)} ${y(reached).toFixed(1)} `;
         });
         if (d)
@@ -7174,9 +7186,9 @@
             cx: x(i),
             cy: y(r.level),
             r: 5.5,
-            fill: r.passed ? STAR_COLORS[r.stars] : "#0e1b2c",
-            stroke: r.passed ? "#0b1728" : STAR_COLORS[0],
-            "stroke-width": r.passed ? 2 : 2.5,
+            fill: isPassed(r) ? "#83edd3" : "#0e1b2c",
+            stroke: isPassed(r) ? "#0b1728" : "#ff8e9a",
+            "stroke-width": isPassed(r) ? 2 : 2.5,
             tabindex: "0",
             role: "button",
             "aria-label": roundDetail(r),
@@ -7225,7 +7237,7 @@
         const key = document.createElement("p");
         key.className = "history-mininote";
         key.textContent =
-          "Each dot is one level round · red ring = not passed · blue ★ · green ★★ · gold ★★★ · line = highest level passed";
+          "Each dot is one level round · green = passed · red ring = not passed · line = highest level passed";
         list.append(key);
         for (const g of games) {
           const rows = levelRounds(g).sort((a, b) => String(b.at).localeCompare(String(a.at)));
