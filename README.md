@@ -4,29 +4,36 @@ Memory Spin is a mobile-first collection of visual attention and memory games.
 
 ## Run
 
-Open `index.html` in a modern browser. The current project is maintained as a **single HTML file**; no build, npm install, or app package is required.
+Open `index.html` in a modern browser. The project is a **single HTML file**: no build step, npm install or app package is needed.
 
 ## Games
 
-- **Numbers** — find 1–50 in order, with optional spinning rings and co-op play.
-- **Memory** — memorize the positions of numbers and recall them.
-- **Categories** — memorize fruits, animals, tools, country flags, or words.
-- **Pattern** — repeat a drawn unlock pattern, including rotating variants.
-- **Links** — remember the number connection order, then reconnect numbers after they shuffle.
-- **Target** — find changing targets on one or more rings.
-- **Recall** — reproduce sequences in forward or reverse order (digits, images, or words).
+- **Numbers**: find 1–50 in order on a mosaic wheel or triple rings, which may be still or spinning.
+- **Categories**: memorize where items sit (numbers, fruits, animals, tools, flags or words), then find each requested one. This replaces the old separate Memory game.
+- **Pattern**: repeat a drawn unlock pattern, including rotating variants.
+- **Links**: remember the order in which numbers are connected, then reconnect them after they shuffle.
+- **Recall**: reproduce a sequence forward or in reverse (digits, pictures or words).
+- **Target**: find changing targets on one or more rings.
+
+## Levels and Practice
+
+Every game has a fixed ladder of levels (9–14 per game). Each level pins all of that game's settings, so results are comparable over time.
+
+- Completing a level earns ★ and unlocks the next one.
+- ★★ and ★★★ require finishing faster and with fewer mistakes. Each level shows its exact star targets before you start.
+- For Target, stars come from the round score: 1,000 × min(hits ÷ required hits, 1) × accuracy.
+- **Practice** keeps the free settings under ⚙ Options. Practice rounds are saved but never count toward levels or stars.
+
+Progress is measured as *highest level passed* and *stars earned*. The old 0–1,000 score across mixed settings has been retired. Rounds recorded under the old scoring stay in storage and backups, but they are not charted.
+
+The ladders and star thresholds are defined in `LEVEL_LADDERS` inside `index.html`. They are first estimates and should be tuned after real play-testing.
 
 ## Profiles and results
 
-Scores, profiles, and history are stored locally in the browser using local storage. Data may not be shared between different browser origins, including different local file URLs. Use the application's **Export Backup / Import Backup** functions when changing the file location or moving between devices.
+Profiles and history are stored locally in the browser. Data is not shared between different browser origins, including different local file URLs. Use **Export Backup / Import Backup** under Profiles when moving the file or changing devices.
 
 ## Notes
 
 - The user interface is in English.
-- Some recorded animal sounds require internet access; the app includes sound fallbacks.
-- References to optional web-app resources may exist inside the HTML, but installing a PWA is not required to play.
+- Some recorded animal sounds need internet access; the app falls back to synthesized sounds.
 - This is an experimental game project, not a clinically validated cognitive assessment or treatment.
-
-## Updating
-
-Keep the latest working version in `index.html`. Commit each change to GitHub to maintain version history.

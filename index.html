@@ -4,8 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0b1020" />
-    <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="icon-192.png" />
     <title>Memory Spin — Brain Training Games</title>
     <style>
       :root {
@@ -2059,7 +2057,7 @@
 
       /* Speed Target: mobile-sized selectable annular cells, fixed centre target */
       #playScreen .mode-switch {
-        grid-template-columns: repeat(7, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
       }
       /* Number Links: only the values and their connection order matter, not screen positions. */
       .board-shell[data-mode="links"] .board-rotor {
@@ -2670,6 +2668,164 @@
       #digitBoard.word-recall .picture-study-token {
         min-height: 48px;
       }
+      /* ---------- Levels ---------- */
+      .board-shell[data-mode="category"].number-content .cell text:not(.category-caption) {
+        font:
+          900 58px Arial,
+          system-ui,
+          sans-serif;
+        fill: #151515;
+      }
+      #playScreen .level-bar {
+        display: flex;
+        gap: 6px;
+        align-items: stretch;
+        width: 100%;
+      }
+      .level-pick {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        gap: 1px;
+        text-align: left;
+        background: #1c2c46;
+        border: 1px solid #4f6d92;
+        border-radius: 11px;
+        color: #eef5ff;
+        padding: 5px 10px;
+      }
+      .level-pick-main {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+      }
+      .level-pick small {
+        font-size: 10px;
+        color: #a9bdd8;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .level-pick::after {
+        content: "";
+      }
+      .stars {
+        color: #ffd166;
+        letter-spacing: 1px;
+        font-size: 13px;
+      }
+      .play-type {
+        display: flex;
+        background: #16223a;
+        border: 1px solid #ffffff1e;
+        border-radius: 11px;
+        padding: 3px;
+        gap: 3px;
+      }
+      .play-type button {
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: #a9bdd8;
+        font-size: 11px;
+        font-weight: 750;
+        padding: 0 9px;
+      }
+      .play-type button[aria-pressed="true"] {
+        background: #2e5065;
+        color: #fff;
+      }
+      body.levels-on #gameSettings {
+        display: none;
+      }
+      body.practice-on .level-pick {
+        opacity: 0.45;
+        pointer-events: none;
+      }
+      .overlay-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      #startButton.as-secondary {
+        background: #2a3b57;
+        box-shadow: none;
+      }
+      .round-score .level-result-stars {
+        font-size: 24px;
+        color: #ffd166;
+        letter-spacing: 2px;
+        display: block;
+      }
+      .round-score.failed {
+        background: #3d1f29;
+        border-color: #ff8c9a66;
+        color: #ffd0d6;
+      }
+      .goal-list {
+        font-size: 11px;
+        color: #cfe0f5;
+        line-height: 1.55;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        text-align: left;
+      }
+      .goal-list li span {
+        color: #ffd166;
+      }
+      .level-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+      }
+      .level-tile {
+        display: grid;
+        gap: 2px;
+        justify-items: center;
+        text-align: center;
+        border: 1px solid #ffffff22;
+        background: #22344f;
+        color: #f1f6ff;
+        border-radius: 11px;
+        padding: 8px 4px;
+        min-height: 82px;
+      }
+      .level-tile b {
+        font-size: 18px;
+      }
+      .level-tile small {
+        font-size: 9px;
+        color: #a9c0dc;
+        line-height: 1.3;
+      }
+      .level-tile.current {
+        border-color: #6addcf;
+        box-shadow: inset 0 0 0 1px #6addcf55;
+      }
+      .level-tile.locked {
+        opacity: 0.38;
+        cursor: not-allowed;
+      }
+      .progress-bar {
+        height: 6px;
+        border-radius: 6px;
+        background: #0f1b2d;
+        overflow: hidden;
+        margin-top: 6px;
+      }
+      .progress-bar span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, #6addcf, #ffd166);
+      }
+      .archive-note {
+        font-size: 10px;
+        color: #8ea6c4;
+        margin: 0;
+      }
     </style>
   </head>
   <body>
@@ -2697,9 +2853,6 @@
           <button class="mode-choice active" id="focusMode" aria-pressed="true" type="button">
             <span class="mode-icon" aria-hidden="true">🔢</span><span class="mode-title">Numbers</span>
           </button>
-          <button class="mode-choice" id="memoryMode" aria-pressed="false" type="button">
-            <span class="mode-icon" aria-hidden="true">🧠</span><span class="mode-title">Memory</span>
-          </button>
           <button class="mode-choice" id="categoryMode" aria-pressed="false" type="button">
             <span class="mode-icon" aria-hidden="true">🧩</span><span class="mode-title">Categories</span>
           </button>
@@ -2715,6 +2868,18 @@
           <button class="mode-choice" id="speedMode" aria-pressed="false" type="button">
             <span class="mode-icon" aria-hidden="true">🎯</span><span class="mode-title">Target</span>
           </button>
+        </div>
+        <div class="level-bar" id="levelBar">
+          <button class="level-pick" id="levelPickButton" type="button" aria-haspopup="dialog">
+            <span class="level-pick-main"
+              ><b id="levelPickTitle">Level 1</b><span class="stars" id="levelPickStars">☆☆☆</span></span
+            >
+            <small id="levelPickDesc"></small>
+          </button>
+          <div class="play-type" role="group" aria-label="Play type">
+            <button type="button" id="levelsTab" aria-pressed="true">Levels</button>
+            <button type="button" id="practiceTab" aria-pressed="false">Practice</button>
+          </div>
         </div>
 
         <section class="hud" aria-label="Game progress">
@@ -2832,7 +2997,10 @@
                 <h2 id="overlayTitle">Ready?</h2>
                 <p id="overlayText">Memorize the board for 3 seconds.</p>
                 <div class="round-score" id="roundScore" hidden></div>
-                <button class="primary" id="startButton" type="button">Start preview</button>
+                <div class="overlay-buttons">
+                  <button class="primary" id="startButton" type="button">Start preview</button>
+                  <button class="primary" id="nextLevelButton" type="button" hidden>Next level ▶</button>
+                </div>
               </div>
             </div>
           </div>
@@ -3015,6 +3183,7 @@
               <section class="level-panel" id="itemCountPanel" aria-label="Category game settings" hidden>
                 <label for="categorySet">Category set</label>
                 <select id="categorySet" aria-label="Category set">
+                  <option value="number">Numbers</option>
                   <option value="fruit" selected>Fruits</option>
                   <option value="animal">Animals</option>
                   <option value="tool">Tools</option>
@@ -3024,8 +3193,12 @@
                 <label for="itemCount">Items in this round</label>
                 <select id="itemCount" aria-label="Items in this round">
                   <option value="3">3 items — Easy</option>
+                  <option value="4">4 items</option>
                   <option value="5" selected>5 items — Normal</option>
+                  <option value="6">6 items</option>
+                  <option value="8">8 items</option>
                   <option value="10">10 items — Hard</option>
+                  <option value="12">12 items — Expert</option>
                 </select>
                 <small id="itemCountDetails"
                   >Choose the category and how many icons appear in each round.</small
@@ -3078,12 +3251,6 @@
           <p id="chartDetail" class="chart-detail" aria-live="polite"></p>
           <p id="slowestList" class="analysis-caption"></p>
         </section>
-        <section
-          id="afterRoundInsights"
-          class="progress-panel"
-          hidden
-          aria-label="Performance and next challenge"
-        ></section>
         <footer id="helpText">Preview for 3 seconds. Mistakes are counted; they do not end the round.</footer>
       </section>
       <section class="screen info-screen" id="statsScreen" hidden aria-label="Game statistics">
@@ -3095,25 +3262,16 @@
           <span class="tiny-profile" id="statsProfileName">Player 1</span>
         </div>
         <div class="overall-grid" id="overallStats"></div>
-        <h2 class="block-title">Score by game</h2>
-        <p class="muted-note">
-          Average and best scores are calculated separately for each game, using the selected player's saved
-          rounds.
-        </p>
+        <h2 class="block-title">Progress by game</h2>
+        <p class="muted-note">Highest level passed and stars earned. Practice rounds never count.</p>
         <div class="stat-cards" id="modeStats"></div>
-        <section
-          class="progress-panel"
-          id="personalProgress"
-          aria-label="Personal progress and adaptive difficulty"
-        ></section>
         <div class="score-explain">
-          <b>How scoring works</b>
+          <b>How levels work</b>
           <p>
-            All games use a 0–1,000 score. Speed Target = 1,000 × min(hits ÷ target hits, 1) × (hits ÷ all
-            attempts). Misses include wrong taps and timeouts. The required hit count adjusts to your chosen
-            target window (e.g., 12 hits at 5 seconds or 20 at 3 seconds); zero misses are required for 1,000.
-            Older Speed Target rounds are recalculated. Compare only matching settings; these are game
-            metrics, not medical measurements.
+            Every game has a fixed ladder of levels. Completing a level earns ★ and unlocks the next one.
+            Extra stars come from finishing faster and with fewer mistakes; each level shows its exact star
+            targets before you start. Practice mode keeps the free settings but saves nothing to progress.
+            These are game metrics, not medical measurements.
           </p>
         </div>
       </section>
@@ -3130,31 +3288,20 @@
             >Game<select id="historyFilter" aria-label="Choose a game">
               <option value="all">All games</option>
               <option value="focus">🔢 Numbers</option>
-              <option value="coop">🤝 Numbers Co-op</option>
-              <option value="memory">🧠 Memory</option>
               <option value="category">🧩 Categories</option>
               <option value="pattern">🔒 Pattern</option>
-              <option value="links">🔗 Number Links</option>
-              <option value="digits">🔟 Sequence Recall</option>
-              <option value="speed">🎯 Speed Target</option>
+              <option value="links">🔗 Links</option>
+              <option value="digits">🔟 Recall</option>
+              <option value="speed">🎯 Target</option>
             </select></label
           >
           <label
-            >Chart<select id="historyMetric" aria-label="Choose chart metric">
-              <option value="score">Score</option>
-              <option value="accuracy">Accuracy %</option>
-              <option value="time">Time (seconds)</option>
-              <option value="errors">Missed / wrong</option>
+            >Rounds<select id="historyWindow" aria-label="Rounds per chart">
+              <option value="20">Last 20</option>
+              <option value="50" selected>Last 50</option>
+              <option value="200">Last 200</option>
             </select></label
           >
-        </div>
-        <div class="history-picks">
-          <span>Chronological rounds · swipe charts sideways</span
-          ><select id="historyWindow" aria-label="Rounds per chart">
-            <option value="10">Last 10</option>
-            <option value="30" selected>Last 30</option>
-            <option value="100">Last 100</option>
-          </select>
         </div>
         <div id="historyList" class="history-dashboard" aria-live="polite"></div>
         <p class="muted-note">
@@ -3204,6 +3351,14 @@
           ><button class="secondary" type="button" id="importData">⬆ Import backup</button
           ><input id="importFile" type="file" accept=".json,application/json" hidden />
         </div>
+      </dialog>
+      <dialog class="profile-dialog level-dialog" id="levelDialog" aria-label="Choose a level">
+        <div class="dialog-title">
+          <h2 id="levelDialogTitle">Levels</h2>
+          <button id="closeLevels" class="dialog-close" type="button" aria-label="Close">✕</button>
+        </div>
+        <p class="muted-note" id="levelDialogNote">Pass a level to unlock the next one.</p>
+        <div class="level-grid" id="levelGrid"></div>
       </dialog>
     </main>
     <script>
@@ -3311,12 +3466,6 @@
           duration: 60000,
           intro:
             "Study the numbers for 3 seconds, then find 1 to 50 as the wheel spins. You have 60 seconds.",
-        },
-        memory: {
-          count: 10,
-          duration: 20000,
-          intro:
-            "Memorize 10 numbers for 3 seconds. They will disappear. Find them in order within 20 seconds.",
         },
         category: {
           count: 10,
@@ -4078,8 +4227,16 @@
       function currentPreviewUnlimited() {
         return mode === "digits" ? digitPreviewMode === "unlimited" : studyMode === "unlimited";
       }
+      function studySecs() {
+        return Math.round(currentPreviewDuration() / 1000);
+      }
+      function limitSecs() {
+        return Math.round(gameDuration() / 1000);
+      }
       function currentPreviewDuration() {
-        return mode === "digits" ? digitPreviewMs : PREVIEW_MS;
+        if (mode === "digits") return digitPreviewMs;
+        const level = activeLevel();
+        return level && level.preview ? level.preview * 1000 : PREVIEW_MS;
       }
       function digitGenerate() {
         let s = String(1 + Math.floor(Math.random() * 9));
@@ -4309,6 +4466,9 @@
           : digitResponse;
       }
       function gameDuration() {
+        const level = activeLevel();
+        if (level && level.time !== undefined && ["focus", "category", "pattern", "links"].includes(mode))
+          return level.time * 1000;
         return mode === "digits"
           ? digitAnswerMs
           : mode === "focus"
@@ -4373,7 +4533,7 @@
         if (mode === "focus") {
           refs.instructions.textContent =
             "Find numbers 1–50. " +
-            (Number.isFinite(gameDuration()) ? "You have 60 seconds." : "No time limit.") +
+            (Number.isFinite(gameDuration()) ? `You have ${limitSecs()} seconds.` : "No time limit.") +
             " " +
             (isFocusRings()
               ? spinAllowed()
@@ -4382,12 +4542,10 @@
               : spinAllowed()
                 ? "The wheel spins."
                 : "The wheel stays still.");
-        } else if (mode === "memory") {
-          refs.instructions.textContent = "Remember 10 numbers, then find them in order in 20 seconds.";
         } else if (mode === "category") {
-          refs.instructions.textContent = `Remember ${currentItemCount()} ${currentCategoryLabel().toLowerCase()}, then find each target in 20 seconds.`;
+          refs.instructions.textContent = `Remember ${currentItemCount()} ${currentCategoryLabel().toLowerCase()}, then find each target in ${limitSecs()} seconds.`;
         } else if (mode === "pattern") {
-          refs.instructions.textContent = "Memorize the 3×3 lock pattern, then draw it in 20 seconds.";
+          refs.instructions.textContent = `Memorize the 3×3 lock pattern, then draw it in ${limitSecs()} seconds.`;
         } else if (mode === "links") {
           refs.instructions.textContent =
             "Remember the number connections, then reconnect them after the numbers shuffle.";
@@ -4403,7 +4561,7 @@
         const study =
           studyMode === "unlimited"
             ? "Study for as long as you want, then tap Start Now. "
-            : "Study the board for 3 seconds. ";
+            : `Study the board for ${studySecs()} seconds. `;
         const motion = isFocusRings()
           ? spinAllowed()
             ? "Three counter-rotating rings spin while you play. "
@@ -4422,7 +4580,9 @@
         if (mode === "links") {
           refs.help.textContent =
             study +
-            "Memorize the NUMBER ORDER shown by arrows. Then numbers change positions. Swipe between the new positions in that order. One attempt; 20 seconds.";
+            "Memorize the NUMBER ORDER shown by arrows. Then numbers change positions. Swipe between the new positions in that order. One attempt; " +
+            limitSecs() +
+            " seconds.";
           return;
         }
         if (mode === "digits") {
@@ -4455,16 +4615,17 @@
           return `Find the ${speedCategoryLabel().toLowerCase()} shown in the centre. ${currentItemCount()} choices across ${speedRingCount} ${speedRingCount === 1 ? "ring" : "rings"}. You have ${speedWindowMs / 1000} seconds per target, 60 seconds total. Wrong taps and timeouts lower accuracy. A perfect 1,000 requires ${speedGoalHits()} hits and no misses. Targets change immediately. Starts immediately.`;
         if (mode === "links")
           return (
-            `Study ${linksLength} connected numbers ${studyMode === "unlimited" ? "as long as you need" : "for 3 seconds"}. The arrows disappear and all nine numbers SHUFFLE. Draw one continuous line through the SAME NUMBERS in the SAME ORDER (not the same shape). You have 20 seconds and one attempt.` +
+            `Study ${linksLength} connected numbers ${studyMode === "unlimited" ? "as long as you need" : `for ${studySecs()} seconds`}. The arrows disappear and all nine numbers SHUFFLE. Draw one continuous line through the SAME NUMBERS in the SAME ORDER (not the same shape). You have ${limitSecs()} seconds and one attempt.` +
             (studyMode === "unlimited" ? " Tap Start Now when ready." : "")
           );
         if (mode === "pattern")
           return (
             "Memorize the dot sequence " +
-            (studyMode === "unlimited" ? "for as long as you like" : "for 3 seconds") +
+            (studyMode === "unlimited" ? "for as long as you like" : `for ${studySecs()} seconds`) +
             ". " +
             PATTERN_SPIN_INFO[patternSpin] +
-            " Then trace the dots in the original order, following their moving positions. You have 20 seconds and one attempt per pattern. A failed round restarts automatically." +
+            ` Then trace the dots in the original order, following their moving positions. You have ${limitSecs()} seconds and one attempt per pattern.` +
+            (practiceMode ? " A failed round restarts automatically." : "") +
             (studyMode === "unlimited" ? " Tap Start Now when ready." : "")
           );
         if (mode !== "focus") {
@@ -4472,12 +4633,12 @@
           let intro = MODES[mode].intro;
           if (mode === "category")
             intro =
-              `Memorize the positions of ${count} ${currentCategoryLabel().toLowerCase()} for 3 seconds. Then find the requested ${currentCategoryVerb()} within 20 seconds.` +
+              `Memorize the positions of ${count} ${currentCategoryLabel().toLowerCase()} for ${studySecs()} seconds. Then find the requested ${currentCategoryVerb()} within ${limitSecs()} seconds.` +
               (categorySet === "animal" ? " Correct answers also play the animal sound." : "");
           return (
             intro.replace(
               "for 3 seconds",
-              studyMode === "unlimited" ? "for as long as you like" : "for 3 seconds",
+              studyMode === "unlimited" ? "for as long as you like" : `for ${studySecs()} seconds`,
             ) +
             (studyMode === "unlimited" ? " Tap Start Now when ready." : "") +
             " Wrong taps are counted, but never end the round."
@@ -4485,7 +4646,7 @@
         }
         return (
           "Study the numbers " +
-          (studyMode === "unlimited" ? "for as long as you like" : "for 3 seconds") +
+          (studyMode === "unlimited" ? "for as long as you like" : `for ${studySecs()} seconds`) +
           ". " +
           (isFocusRings()
             ? spinAllowed()
@@ -4495,7 +4656,7 @@
               ? "The wheel will spin. "
               : "The wheel will stay still. ") +
           (Number.isFinite(gameDuration())
-            ? "Find 1–50 within 60 seconds. "
+            ? `Find 1–50 within ${limitSecs()} seconds. `
             : "Training goal: " +
               (focusLayout === "rings" ? 180 : 120) +
               " seconds, but you can keep playing without a cutoff. ") +
@@ -4519,7 +4680,7 @@
                   : 33
               : speedVisibleCount
             : mode === "category"
-              ? Number(refs.itemCount.value)
+              ? Math.min(Number(refs.itemCount.value), currentCategoryItems().length)
               : MODES[mode].count;
       }
       function speedCategoryLabel() {
@@ -4552,38 +4713,27 @@
         $("speedRules").textContent =
           `60-second round · ${speedWindowMs / 1000}s per target · ${picture ? speedVisibleCount + (speedCategory === "word" ? " words" : " icons") : currentItemCount() + " numbers"} · 1,000 points requires ${speedGoalHits()} hits and zero misses.`;
       }
+      const NUMBER_ITEMS = Array.from({ length: 12 }, (_, i) => ({
+        icon: String(i + 1),
+        name: "Number " + (i + 1),
+        number: true,
+      }));
+      const CATEGORY_SETS = {
+        number: { items: NUMBER_ITEMS, label: "Numbers", noun: "number" },
+        fruit: { items: FRUITS, label: "Fruits", noun: "fruit" },
+        animal: { items: ANIMALS, label: "Animals", noun: "animal" },
+        tool: { items: TOOLS, label: "Tools", noun: "tool" },
+        flag: { items: FLAGS, label: "Country Flags", noun: "flag" },
+        word: { items: WORDS, label: "Words", noun: "word" },
+      };
       function currentCategoryItems() {
-        return categorySet === "fruit"
-          ? FRUITS
-          : categorySet === "animal"
-            ? ANIMALS
-            : categorySet === "tool"
-              ? TOOLS
-              : categorySet === "word"
-                ? WORDS
-                : FLAGS;
+        return (CATEGORY_SETS[categorySet] || CATEGORY_SETS.fruit).items;
       }
       function currentCategoryLabel() {
-        return categorySet === "fruit"
-          ? "Fruits"
-          : categorySet === "animal"
-            ? "Animals"
-            : categorySet === "tool"
-              ? "Tools"
-              : categorySet === "word"
-                ? "Words"
-                : "Country Flags";
+        return (CATEGORY_SETS[categorySet] || CATEGORY_SETS.fruit).label;
       }
       function currentCategoryVerb() {
-        return categorySet === "flag"
-          ? "flag"
-          : categorySet === "word"
-            ? "word"
-            : categorySet === "tool"
-              ? "tool"
-              : categorySet === "animal"
-                ? "animal"
-                : "fruit";
+        return (CATEGORY_SETS[categorySet] || CATEGORY_SETS.fruit).noun;
       }
       function isFocusRings() {
         return mode === "focus" && focusLayout === "rings";
@@ -4954,7 +5104,8 @@
           const d =
             poly.map((p, k) => (k ? "L" : "M") + p.x.toFixed(2) + "," + p.y.toFixed(2)).join(" ") + " Z";
           g.appendChild(svg("path", { d }));
-          const showCaption = mode === "category" && categorySet !== "word" && values.length <= 5;
+          const showCaption =
+            mode === "category" && !["word", "number"].includes(categorySet) && values.length <= 5;
           const label = svg("text", {
             x: center.x.toFixed(2),
             y: (center.y + (showCaption ? -15 : 0)).toFixed(2),
@@ -5029,7 +5180,7 @@
         let item = contentFor(k);
         refs.next.textContent =
           mode === "category"
-            ? categorySet === "word"
+            ? categorySet === "word" || categorySet === "number"
               ? item.icon
               : item.icon + " " + item.name
             : String(k);
@@ -5319,6 +5470,7 @@
       }
       function queueNewPattern() {
         clearTimeout(patternRestartTimer);
+        if (!practiceMode) return; // Levels show the result and let the player choose Retry.
         patternRestartTimer = setTimeout(() => {
           patternRestartTimer = 0;
           if (!["pattern", "links"].includes(mode) || state !== "finished") return;
@@ -5358,7 +5510,6 @@
           );
           renderAnalysis();
           showRoundScore(completedRound);
-          renderAfterRoundInsights(completedRound);
           return;
         }
         if (mode === "digits") {
@@ -5383,7 +5534,6 @@
           refs.analysis.hidden = true;
           refs.analysisJump.hidden = true;
           showRoundScore(completedRound);
-          renderAfterRoundInsights(completedRound);
           return;
         }
         if (mode === "pattern" || mode === "links") {
@@ -5398,10 +5548,12 @@
             } else {
               showOverlay(
                 reason === "time" ? "⏱ Time’s up!" : "Incorrect connections",
-                "Only one continuous swipe is allowed. A new sequence starts automatically.",
+                practiceMode
+                  ? "Only one continuous swipe is allowed. A new sequence starts automatically."
+                  : "Only one continuous swipe is allowed.",
                 "Next sequence",
               );
-              setStatus("New number sequence coming up…", true);
+              setStatus(practiceMode ? "New number sequence coming up…" : "Incorrect connections.", true);
               queueNewPattern();
             }
           } else if (reason === "win") {
@@ -5414,19 +5566,17 @@
           } else {
             showOverlay(
               reason === "time" ? "⏱ Time’s up!" : "🔒 Incorrect pattern",
-              "One attempt per pattern. A new pattern starts automatically.",
+              practiceMode
+                ? "One attempt per pattern. A new pattern starts automatically."
+                : "One attempt per pattern.",
               "Start new pattern",
             );
-            setStatus(
-              reason === "time" ? "Time expired — restarting." : "Incorrect pattern — restarting.",
-              true,
-            );
+            setStatus(reason === "time" ? "Time expired." : "Incorrect pattern.", true);
             queueNewPattern();
           }
           refs.analysis.hidden = true;
           refs.analysisJump.hidden = true;
           showRoundScore(completedRound);
-          renderAfterRoundInsights(completedRound);
           return;
         }
         if (reason === "win") {
@@ -5455,7 +5605,6 @@
         }
         renderAnalysis();
         showRoundScore(completedRound);
-        renderAfterRoundInsights(completedRound);
       }
       function resetGame() {
         clearTimeout(patternRestartTimer);
@@ -5472,7 +5621,6 @@
         speedLastTarget = 0;
         speedTargetAt = 0;
         speedResponseTimes = [];
-        $("afterRoundInsights").hidden = true;
         if ($("roundScore")) $("roundScore").hidden = true;
         cancelAnimationFrame(rafId);
         clearTimeout(patternClearTimer);
@@ -5516,7 +5664,8 @@
         setTime(0);
         setStatus("");
         updateSpeedSummary();
-        targets = mode === "focus" || mode === "memory" ? itemKeys() : shuffle(itemKeys());
+        targets = mode === "focus" ? itemKeys() : shuffle(itemKeys());
+        refs.shell.classList.toggle("number-content", mode === "category" && categorySet === "number");
         updateTarget();
         refs.rotor.classList.add("paused");
         refs.rotor.style.animation = "none";
@@ -5549,9 +5698,7 @@
                   ? "Sequence Recall 🔟"
                   : mode === "category"
                     ? currentCategoryLabel() + " Match 🧩"
-                    : mode === "memory"
-                      ? "Number Memory 🧠"
-                      : "Number Focus 🔢",
+                    : "Number Focus 🔢",
           introText(),
           mode === "speed"
             ? "Start 60-second round"
@@ -5561,8 +5708,9 @@
                 : "Show board"
               : mode === "digits"
                 ? "Start memorizing"
-                : "Start 3-second preview",
+                : `Start ${studySecs()}-second preview`,
         );
+        decorateLevelIntro();
       }
       function changeMode(selected) {
         if (mode === selected) return;
@@ -5570,7 +5718,6 @@
         refs.shell.dataset.mode = mode;
         for (const [name, id] of [
           ["focus", "focusMode"],
-          ["memory", "memoryMode"],
           ["category", "categoryMode"],
           ["pattern", "patternMode"],
           ["links", "linksMode"],
@@ -5609,10 +5756,8 @@
           ["category", "pattern", "links", "digits", "speed"].includes(mode),
         );
         if (mode === "focus") refs.instructions.textContent = "Find numbers 1–50.";
-        else if (mode === "memory")
-          refs.instructions.textContent = "Remember 10 numbers, then find them in order in 20 seconds.";
         else if (mode === "category")
-          refs.instructions.textContent = `Remember ${currentItemCount()} ${currentCategoryLabel().toLowerCase()}, then find each target in 20 seconds.`;
+          refs.instructions.textContent = `Remember ${currentItemCount()} ${currentCategoryLabel().toLowerCase()}, then find each target in ${limitSecs()} seconds.`;
         else if (mode === "links")
           refs.instructions.textContent =
             "Remember the connections, then reconnect the same numbers after they shuffle.";
@@ -5620,9 +5765,11 @@
           refs.instructions.textContent = `Memorize ${digitLength} ${isPictureRecall() ? recallLabel().toLowerCase() : "digits"}. Recall in a random direction.`;
         else if (mode === "speed")
           refs.instructions.textContent = `${speedCategoryLabel()} · ${speedWindowMs / 1000}s per target · 60s round.`;
-        else refs.instructions.textContent = "Memorize the 3×3 lock pattern, then draw it in 20 seconds.";
+        else
+          refs.instructions.textContent = `Memorize the 3×3 lock pattern, then draw it in ${limitSecs()} seconds.`;
         updateLevelUi();
-        resetGame();
+        if (!practiceMode) applyLevel(currentLevelNumber());
+        else resetGame();
         renderProfileSummary();
       }
       function unlockAudio() {
@@ -5784,7 +5931,6 @@
       }
       for (const [name, id] of [
         ["focus", "focusMode"],
-        ["memory", "memoryMode"],
         ["category", "categoryMode"],
         ["pattern", "patternMode"],
         ["links", "linksMode"],
@@ -6071,6 +6217,7 @@
         profilesDb.activeId = id;
         saveProfiles();
         updateProfileUi();
+        resetLevelSelection();
         renderProfileSummary();
       }
       function difficultyName() {
@@ -6205,43 +6352,455 @@
           recallKind: mode === "digits" ? digitKind : undefined,
           recallStudy: mode === "digits" ? digitPreviewMode : undefined,
         };
+        Object.assign(round, levelFieldsFor(round));
         profilesDb.rounds.unshift(round);
         if (profilesDb.rounds.length > 5000) profilesDb.rounds = profilesDb.rounds.slice(0, 5000);
         saveProfiles();
         renderProfileSummary();
         return round;
       }
+      // ------- Levels: fixed ladders per game, stars, unlocks, Practice mode -------
+      // Each level pins every setting of its game, so results are comparable and progress is
+      // simply "highest level passed" plus stars. Thresholds are first guesses: tune after play-testing.
+      const LEVEL_LADDERS = {
+        focus: [
+          { spin: false, layout: "mosaic", time: Infinity, t3: 120, t2: 200, m3: 2, m2: 6 },
+          { spin: false, layout: "mosaic", time: 180, t3: 110, t2: 150, m3: 2, m2: 5 },
+          { spin: true, spinSpeed: 1, layout: "mosaic", time: 180, t3: 120, t2: 160, m3: 2, m2: 5 },
+          { spin: true, spinSpeed: 2, layout: "mosaic", time: 150, t3: 110, t2: 135, m3: 2, m2: 5 },
+          { spin: false, layout: "rings", time: 180, t3: 120, t2: 160, m3: 2, m2: 5 },
+          { spin: true, spinSpeed: 3, layout: "mosaic", time: 150, t3: 110, t2: 135, m3: 2, m2: 4 },
+          { spin: true, layout: "rings", time: 180, t3: 130, t2: 165, m3: 2, m2: 5 },
+          { spin: true, spinSpeed: 2, layout: "mosaic", time: 120, t3: 90, t2: 105, m3: 1, m2: 4 },
+          { spin: true, layout: "rings", time: 150, t3: 110, t2: 135, m3: 1, m2: 4 },
+          { spin: true, spinSpeed: 3, layout: "mosaic", time: 100, t3: 75, t2: 90, m3: 1, m2: 3 },
+        ],
+        category: [
+          { set: "number", count: 3, preview: 5, spin: false, time: 20 },
+          { set: "fruit", count: 4, preview: 5, spin: false, time: 20 },
+          { set: "animal", count: 5, preview: 4, spin: false, time: 20 },
+          { set: "number", count: 5, preview: 3, spin: true, time: 20 },
+          { set: "flag", count: 6, preview: 4, spin: false, time: 25 },
+          { set: "tool", count: 6, preview: 3, spin: true, time: 25 },
+          { set: "number", count: 8, preview: 4, spin: true, time: 30 },
+          { set: "fruit", count: 8, preview: 4, spin: true, time: 30 },
+          { set: "word", count: 8, preview: 4, spin: true, time: 30 },
+          { set: "animal", count: 10, preview: 5, spin: true, time: 35 },
+          { set: "flag", count: 10, preview: 4, spin: true, time: 35 },
+          { set: "number", count: 12, preview: 5, spin: true, time: 40 },
+        ].map((l) => ({
+          ...l,
+          t3: Math.round(l.count * 1.6),
+          t2: Math.round(l.count * 2.6),
+          m3: 0,
+          m2: Math.ceil(l.count / 4),
+        })),
+        pattern: [
+          [4, "still"],
+          [5, "still"],
+          [6, "still"],
+          [5, "smooth"],
+          [6, "smooth"],
+          [7, "still"],
+          [6, "fast"],
+          [7, "smooth"],
+          [6, "reverse"],
+          [7, "fast"],
+          [6, "jump"],
+          [8, "reverse"],
+          [8, "jump"],
+          [9, "fast"],
+        ].map(([length, spin]) => ({
+          length,
+          spin,
+          time: 20,
+          t3: Math.round(2 + 0.6 * length),
+          t2: Math.round(4 + 1.1 * length),
+        })),
+        links: [
+          [3, 4],
+          [3, 3],
+          [4, 4],
+          [4, 3],
+          [5, 4],
+          [5, 3],
+          [6, 5],
+          [6, 4],
+          [6, 3],
+        ].map(([length, preview]) => ({
+          length,
+          preview,
+          time: 20,
+          t3: 2 + length,
+          t2: Math.round(5 + 1.5 * length),
+        })),
+        digits: [
+          ["number", 4, 5],
+          ["number", 5, 5],
+          ["fruit", 4, 5],
+          ["number", 6, 5],
+          ["animal", 5, 5],
+          ["number", 7, 5],
+          ["flag", 5, 5],
+          ["number", 8, 10],
+          ["word", 6, 10],
+          ["number", 9, 10],
+          ["fruit", 7, 10],
+          ["number", 10, 10],
+          ["number", 11, 10],
+          ["number", 12, 10],
+        ].map(([kind, length, preview]) => ({
+          kind,
+          length,
+          preview,
+          answer: length > 10 ? 60 : 30,
+          t3: Math.round(1.5 + 0.9 * length),
+          t2: Math.round(3 + 1.8 * length),
+        })),
+        speed: [
+          ["number", 10, 5, 1, "still"],
+          ["number", 10, 5, 2, "still"],
+          ["fruit", 6, 5, 1, "still"],
+          ["number", 10, 5, 2, "slow"],
+          ["animal", 10, 5, 2, "slow"],
+          ["number", 10, 5, 3, "still"],
+          ["flag", 10, 4, 2, "normal"],
+          ["number", 10, 4, 3, "normal"],
+          ["word", 10, 4, 2, "normal"],
+          ["fruit", 15, 4, 3, "normal"],
+          ["number", 10, 3, 3, "fast"],
+          ["flag", 15, 3, 3, "fast"],
+        ].map(([cat, visible, window, rings, rate]) => ({
+          cat,
+          visible,
+          window,
+          rings,
+          rate,
+          s1: 550,
+          s2: 750,
+          s3: 900,
+        })),
+      };
+      const LEVEL_GAMES = ["focus", "category", "pattern", "links", "digits", "speed"];
+      const PATTERN_SPIN_SHORT = {
+        still: "still",
+        smooth: "slow spin",
+        fast: "fast spin",
+        reverse: "reversing",
+        jump: "90° jumps",
+      };
+      const KIND_LABELS = {
+        number: "digits",
+        fruit: "fruits",
+        animal: "animals",
+        flag: "flags",
+        word: "words",
+      };
+      let practiceMode = false;
+      const selectedLevel = {};
+
+      function ladder(game = mode) {
+        return LEVEL_LADDERS[game] || [];
+      }
+      function levelRounds(game) {
+        return activeRounds().filter((r) => r.schema === 2 && !r.practice && r.game === game);
+      }
+      function bestStarsByLevel(game) {
+        const best = new Map();
+        for (const r of levelRounds(game)) best.set(r.level, Math.max(best.get(r.level) || 0, r.stars || 0));
+        return best;
+      }
+      function highestPassed(game) {
+        const best = bestStarsByLevel(game);
+        let n = 0;
+        while (best.get(n + 1) >= 1) n++;
+        return n;
+      }
+      function isUnlocked(game, n) {
+        return n === 1 || (bestStarsByLevel(game).get(n - 1) || 0) >= 1;
+      }
+      function currentLevelNumber(game = mode) {
+        const max = ladder(game).length;
+        if (selectedLevel[game]) return selectedLevel[game];
+        return Math.min(max, highestPassed(game) + 1);
+      }
+      function activeLevel() {
+        if (practiceMode || !LEVEL_LADDERS[mode]) return null;
+        return ladder()[currentLevelNumber() - 1] || null;
+      }
+      function starString(n, total = 3) {
+        return "★".repeat(n) + "☆".repeat(Math.max(0, total - n));
+      }
+      function levelSummary(game, L) {
+        if (game === "focus")
+          return `${L.layout === "rings" ? "Triple rings" : "Mosaic"} · ${L.spin ? "spinning" : "still"} · ${Number.isFinite(L.time) ? L.time + "s limit" : "no limit"}`;
+        if (game === "category")
+          return `${L.count} ${CATEGORY_SETS[L.set].label.toLowerCase()} · ${L.preview}s to look · ${L.spin ? "spinning" : "still"}`;
+        if (game === "pattern") return `${L.length} dots · ${PATTERN_SPIN_SHORT[L.spin]}`;
+        if (game === "links") return `${L.length} links · ${L.preview}s to look`;
+        if (game === "digits") return `${L.length} ${KIND_LABELS[L.kind]} · ${L.preview}s to look`;
+        if (game === "speed")
+          return `${L.cat === "number" ? "Numbers" : CATEGORY_SETS[L.cat].label} · ${L.rings} ring${L.rings > 1 ? "s" : ""} · ${L.window}s per target · ${L.rate}`;
+        return "";
+      }
+      function levelGoals(game, L) {
+        if (game === "speed") {
+          const hits = { 3: 20, 4: 15, 5: 12, 7: 9 }[L.window] || 12;
+          return [
+            `Score ≥ ${L.s1} (score = 1,000 × hits ÷ ${hits}, capped, × accuracy)`,
+            `Score ≥ ${L.s2}`,
+            `Score ≥ ${L.s3}`,
+          ];
+        }
+        if (game === "focus" || game === "category") {
+          const all = game === "focus" ? "Find 1–50" : `Find all ${L.count}`;
+          return [
+            all + (Number.isFinite(L.time) ? ` within ${L.time}s` : ""),
+            `…in ≤ ${L.t2}s with ≤ ${L.m2} mistake${L.m2 === 1 ? "" : "s"}`,
+            `…in ≤ ${L.t3}s with ${L.m3 ? "≤ " + L.m3 : "no"} mistake${L.m3 === 1 ? "" : "s"}`,
+          ];
+        }
+        return ["Perfect answer, one attempt", `…in ≤ ${L.t2}s`, `…in ≤ ${L.t3}s`];
+      }
+      function starsFor(game, L, r) {
+        if (game === "speed") {
+          const s = Number(r.score) || 0;
+          return s >= L.s3 ? 3 : s >= L.s2 ? 2 : s >= L.s1 ? 1 : 0;
+        }
+        if (r.outcome !== "win") return 0;
+        const t = (Number(r.elapsedMs) || 0) / 1000,
+          m = Number(r.mistakes) || 0;
+        if (game === "focus" || game === "category") {
+          if (t <= L.t3 && m <= L.m3) return 3;
+          if (t <= L.t2 && m <= L.m2) return 2;
+          return 1;
+        }
+        if (m > 0) return 0; // pattern, links, recall: only a perfect answer counts
+        return t <= L.t3 ? 3 : t <= L.t2 ? 2 : 1;
+      }
+      function levelFieldsFor(round) {
+        const fields = { schema: 2, game: mode, practice: practiceMode };
+        const L = activeLevel();
+        if (!practiceMode && L) {
+          fields.level = currentLevelNumber();
+          fields.stars = starsFor(mode, L, round);
+          fields.passed = fields.stars >= 1;
+        }
+        return fields;
+      }
+      function setSpinSpeed(value) {
+        $("speedRange").value = String(value);
+        $("speedRange").dispatchEvent(new Event("input"));
+      }
+      function applyLevel(n) {
+        const game = mode,
+          list = ladder(game);
+        if (!list.length) return;
+        n = Math.max(1, Math.min(list.length, n));
+        selectedLevel[game] = n;
+        const L = list[n - 1];
+        studyMode = "timed";
+        refs.studyTime.value = "timed";
+        if (game === "focus") {
+          focusLevel = L.spin ? "free_spin" : "beginner";
+          refs.levelSelect.value = focusLevel;
+          focusLayout = L.layout;
+          refs.focusLayout.value = focusLayout;
+          hideWrongNumbers = false;
+          refs.hideWrongNumber.checked = false;
+          coOpEnabled = false;
+          refs.coOpMode.checked = false;
+          setSpinSpeed(L.spinSpeed || 2);
+        } else if (game === "category") {
+          categorySet = L.set;
+          refs.categorySet.value = L.set;
+          refs.itemCount.value = String(L.count);
+          spinEnabled = L.spin;
+          setSpinSpeed(2);
+        } else if (game === "pattern") {
+          patternLength = L.length;
+          refs.patternLength.value = String(L.length);
+          patternSpin = L.spin;
+          refs.patternSpin.value = L.spin;
+          refs.patternSpinDetails.textContent = PATTERN_SPIN_INFO[L.spin];
+        } else if (game === "links") {
+          linksLength = L.length;
+          refs.linksLength.value = String(L.length);
+        } else if (game === "digits") {
+          digitKind = L.kind;
+          refs.digitKind.value = L.kind;
+          digitLength = L.length;
+          refs.digitLength.value = String(L.length);
+          digitPreviewMode = String(L.preview);
+          refs.digitPreviewTime.value = String(L.preview);
+          digitPreviewMs = L.preview * 1000;
+          digitAnswerMs = L.answer * 1000;
+          refs.digitAnswerTime.value = String(L.answer);
+          syncDigitSettings();
+        } else if (game === "speed") {
+          speedCategory = L.cat;
+          $("speedCategory").value = L.cat;
+          speedVisibleCount = L.visible;
+          $("speedVisibleCount").value = String(L.visible);
+          speedWindowMs = L.window * 1000;
+          $("speedTargetSeconds").value = String(L.window);
+          speedRingCount = L.rings;
+          $("speedRingCount").value = String(L.rings);
+          speedRingSpin = L.rate !== "still";
+          $("speedRingSpin").checked = speedRingSpin;
+          speedRingRate = L.rate === "still" ? "normal" : L.rate;
+          $("speedRingRate").value = speedRingRate;
+        }
+        updateLevelUi();
+        resetGame();
+        updateLevelBar();
+      }
+      function resetLevelSelection() {
+        // Progress belongs to the player: after switching or clearing, start at their next open level.
+        for (const k of Object.keys(selectedLevel)) delete selectedLevel[k];
+        if (!practiceMode) applyLevel(currentLevelNumber());
+      }
+      function setPlayType(practice) {
+        practiceMode = practice;
+        document.body.classList.toggle("practice-on", practice);
+        document.body.classList.toggle("levels-on", !practice);
+        $("levelsTab").setAttribute("aria-pressed", String(!practice));
+        $("practiceTab").setAttribute("aria-pressed", String(practice));
+        $("gameSettings").open = false;
+        if (practice) {
+          updateLevelUi();
+          resetGame();
+          updateLevelBar();
+        } else applyLevel(currentLevelNumber());
+      }
+      function updateLevelBar() {
+        if (practiceMode || !LEVEL_LADDERS[mode]) {
+          $("levelPickTitle").textContent = "Practice";
+          $("levelPickStars").textContent = "";
+          $("levelPickDesc").textContent = "Free settings in ⚙ Options · not counted";
+          return;
+        }
+        const n = currentLevelNumber(),
+          L = ladder()[n - 1];
+        $("levelPickTitle").textContent = `Level ${n} / ${ladder().length}`;
+        $("levelPickStars").textContent = starString(bestStarsByLevel(mode).get(n) || 0);
+        $("levelPickDesc").textContent = levelSummary(mode, L) + " ▾";
+      }
+      function decorateLevelIntro() {
+        const banner = $("roundScore");
+        $("nextLevelButton").hidden = true;
+        $("startButton").classList.remove("as-secondary");
+        banner.classList.remove("failed");
+        if (practiceMode) {
+          $("overlayTitle").textContent = "Practice · " + $("overlayTitle").textContent;
+          banner.hidden = true;
+          return;
+        }
+        const L = activeLevel();
+        if (!L) return;
+        const n = currentLevelNumber();
+        $("overlayTitle").textContent =
+          `Level ${n} · ${$("overlayTitle").textContent.replace(/ [^\w\s]+$/u, "")}`;
+        renderGoals(banner, levelGoals(mode, L), bestStarsByLevel(mode).get(n) || 0);
+        banner.hidden = false;
+      }
+      function renderGoals(container, goals, earned) {
+        container.replaceChildren();
+        const list = document.createElement("ul");
+        list.className = "goal-list";
+        goals.forEach((g, i) => {
+          const li = document.createElement("li");
+          const s = document.createElement("span");
+          s.textContent = (i < earned ? "★".repeat(i + 1) : "☆".repeat(i + 1)) + " ";
+          li.append(s, document.createTextNode(g));
+          list.append(li);
+        });
+        container.append(list);
+      }
       function showRoundScore(round) {
         const banner = $("roundScore");
         if (!round) return;
-        const prev = activeRounds()
-          .filter((r) => r.mode === round.mode)
-          .map((r) => r.score);
-        const best = Math.max(...prev, 0);
         banner.hidden = false;
         banner.replaceChildren();
-        const title = document.createElement("strong");
-        title.textContent = round.score.toLocaleString("en-US") + " / 1,000";
-        banner.append(
-          title,
-          document.createTextNode("Round score · Personal best: " + best.toLocaleString("en-US")),
-        );
+        banner.classList.remove("failed");
+        $("nextLevelButton").hidden = true;
+        $("startButton").classList.remove("as-secondary");
+        if (round.practice || round.level === undefined) {
+          const t = document.createElement("strong");
+          t.textContent = "Practice round";
+          banner.append(t, document.createTextNode("Not counted toward levels."));
+          return;
+        }
+        const L = ladder(round.game)[round.level - 1];
+        const best = bestStarsByLevel(round.game).get(round.level) || 0;
+        const stars = document.createElement("span");
+        stars.className = "level-result-stars";
+        stars.textContent = starString(round.stars);
+        const line = document.createElement("strong");
+        line.textContent = round.passed ? `Level ${round.level} passed` : `Level ${round.level} not passed`;
+        banner.append(stars, line);
+        if (best > round.stars) banner.append(document.createTextNode(`Your best here: ${starString(best)}`));
+        renderGoalsInto(banner, levelGoals(round.game, L), round.stars);
+        if (!round.passed) banner.classList.add("failed");
+        const hasNext = round.level < ladder(round.game).length;
+        if (round.passed && hasNext) {
+          $("nextLevelButton").hidden = false;
+          $("startButton").textContent = round.stars < 3 ? "Retry for ★★★" : "Replay";
+          $("startButton").classList.add("as-secondary");
+        } else {
+          $("startButton").textContent = round.passed ? "Replay" : "Retry level";
+        }
+        updateLevelBar();
       }
-      function renderProfileSummary() {
-        if (!$("statsScreen")) return;
-        const all = activeRounds();
-        const statMode = isCoop() ? "coop" : mode;
-        const modeData = all.filter((r) => r.mode === statMode);
-        $("playBest").innerHTML =
-          "Best <b>" +
-          (modeData.length ? Math.max(...modeData.map((r) => r.score)).toLocaleString("en-US") : "—") +
-          "</b>";
-        $("playScoreMini").textContent = modeData.length
-          ? `${modeData.length} ${modeData.length === 1 ? "round" : "rounds"} played in ${GAME_NAMES[statMode]} · Your average: ${Math.round(modeData.reduce((s, r) => s + r.score, 0) / modeData.length)}`
-          : "Play a round to start collecting scores.";
-        renderStats(all);
-        renderHistory(all);
+      function renderGoalsInto(container, goals, earned) {
+        const holder = document.createElement("div");
+        renderGoals(holder, goals, earned);
+        container.append(holder.firstChild);
       }
+      function openLevelDialog() {
+        if (practiceMode || !LEVEL_LADDERS[mode]) return;
+        const grid = $("levelGrid");
+        grid.replaceChildren();
+        const best = bestStarsByLevel(mode),
+          current = currentLevelNumber();
+        $("levelDialogTitle").textContent = GAME_NAMES[mode] + " · Levels";
+        const total = [...best.values()].reduce((s, n) => s + n, 0);
+        $("levelDialogNote").textContent =
+          `${highestPassed(mode)} / ${ladder().length} passed · ${total} / ${ladder().length * 3} ★. Pass a level to unlock the next.`;
+        ladder().forEach((L, i) => {
+          const n = i + 1,
+            open = isUnlocked(mode, n);
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "level-tile" + (n === current ? " current" : "") + (open ? "" : " locked");
+          b.disabled = !open;
+          const num = document.createElement("b");
+          num.textContent = open ? String(n) : "🔒";
+          const st = document.createElement("span");
+          st.className = "stars";
+          st.textContent = starString(best.get(n) || 0);
+          const desc = document.createElement("small");
+          desc.textContent = levelSummary(mode, L);
+          b.append(num, st, desc);
+          b.addEventListener("click", () => {
+            $("levelDialog").close();
+            applyLevel(n);
+          });
+          grid.append(b);
+        });
+        $("levelDialog").showModal();
+      }
+      function bindLevelUi() {
+        $("levelPickButton").addEventListener("click", openLevelDialog);
+        $("closeLevels").addEventListener("click", () => $("levelDialog").close());
+        $("levelsTab").addEventListener("click", () => practiceMode && setPlayType(false));
+        $("practiceTab").addEventListener("click", () => !practiceMode && setPlayType(true));
+        $("nextLevelButton").addEventListener("click", () => {
+          applyLevel(currentLevelNumber() + 1);
+        });
+      }
+
+      // ------- Stats and History (level rounds only; old 0–1,000 rounds are archived) -------
       function addMetric(node, value, label) {
         const div = document.createElement("div");
         div.className = "metric";
@@ -6252,224 +6811,71 @@
         div.append(b, s);
         node.append(div);
       }
-      function comparableRounds(all, round) {
-        return all.filter(
-          (r) =>
-            r.mode === round.mode &&
-            r.variant === round.variant &&
-            r.study === round.study &&
-            r.rotation === round.rotation,
-        );
-      }
-      function averageScore(rows) {
-        return rows.length ? rows.reduce((s, r) => s + r.score, 0) / rows.length : 0;
-      }
-      function personalTrend(rows) {
-        if (rows.length < 6) return `Save ${6 - rows.length} more comparable rounds to unlock a trend.`;
-        const recent = rows.slice(0, Math.min(10, Math.floor(rows.length / 2)));
-        const previous = rows.slice(recent.length, recent.length * 2);
-        const a = averageScore(recent),
-          b = averageScore(previous),
-          diff = b ? (100 * (a - b)) / b : 0;
-        return `Recent ${recent.length}: ${Math.round(a)} · Previous ${previous.length}: ${Math.round(b)} · ${diff >= 0 ? "+" : ""}${diff.toFixed(1)}% ${diff >= 0 ? "improvement" : "change"}.`;
-      }
-      function challengeRecommendation(rows) {
-        if (rows.length < 3) return null;
-        const last = rows.slice(0, 3);
-        if (mode === "focus" && last.every((r) => r.outcome === "win" && r.mistakes <= 3)) {
-          if (focusLevel === "beginner")
-            return {
-              label: "Try Intermediate",
-              apply: () => {
-                refs.levelSelect.value = "intermediate";
-                focusLevel = "intermediate";
-                updateLevelUi();
-                resetGame();
-              },
-            };
-          if (focusLevel === "intermediate")
-            return {
-              label: "Try Advanced",
-              apply: () => {
-                refs.levelSelect.value = "advanced";
-                focusLevel = "advanced";
-                updateLevelUi();
-                resetGame();
-              },
-            };
-          if (focusLevel === "free_spin" && focusLayout === "mosaic")
-            return {
-              label: "Try Triple Rings",
-              apply: () => {
-                focusLayout = "rings";
-                refs.focusLayout.value = "rings";
-                updateLevelUi();
-                resetGame();
-              },
-            };
-          if (focusLevel === "advanced" && focusLayout === "mosaic")
-            return {
-              label: "Try Triple Rings",
-              apply: () => {
-                focusLayout = "rings";
-                refs.focusLayout.value = "rings";
-                updateLevelUi();
-                resetGame();
-              },
-            };
+      function renderProfileSummary() {
+        if (!$("statsScreen")) return;
+        const all = activeRounds();
+        if (LEVEL_LADDERS[mode]) {
+          const best = bestStarsByLevel(mode);
+          const total = [...best.values()].reduce((s, n) => s + n, 0);
+          $("playBest").innerHTML = `★ <b>${total}</b>`;
+          $("playScoreMini").textContent =
+            `${GAME_NAMES[mode]} · ${highestPassed(mode)} / ${ladder().length} levels passed`;
         }
-        if (mode === "speed" && last.every((r) => r.score >= 750 && r.found >= speedGoalHits())) {
-          if (speedRingCount < 3)
-            return {
-              label: `Try ${speedRingCount + 1} rings`,
-              apply: () => {
-                speedRingCount++;
-                $("speedRingCount").value = String(speedRingCount);
-                resetGame();
-              },
-            };
-          if (!speedRingSpin)
-            return {
-              label: "Try spinning rings",
-              apply: () => {
-                speedRingSpin = true;
-                $("speedRingSpin").checked = true;
-                resetGame();
-              },
-            };
-          if (speedRingRate !== "fast")
-            return {
-              label: "Increase spin speed",
-              apply: () => {
-                speedRingRate = "fast";
-                $("speedRingRate").value = "fast";
-                resetGame();
-              },
-            };
-        }
-        return null;
-      }
-      function addParagraph(container, text) {
-        const p = document.createElement("p");
-        p.textContent = text;
-        container.append(p);
-      }
-      function renderAfterRoundInsights(round) {
-        const container = $("afterRoundInsights");
-        container.replaceChildren();
-        container.hidden = false;
-        const heading = document.createElement("h3");
-        heading.textContent = "📈 Performance & next challenge";
-        container.append(heading);
-        const same = comparableRounds(activeRounds(), round);
-        if (round.mode === "speed")
-          addParagraph(
-            container,
-            `${round.found} hits · ${round.misses || 0} missed · ${speedAccuracy(round.found, round.misses || 0)}% accuracy · ${round.score}/1,000 · Average reaction: ${round.reactionAvgMs === undefined ? "—" : (round.reactionAvgMs / 1000).toFixed(2) + "s"}.`,
-          );
-        else if (round.mode !== "focus")
-          addParagraph(
-            container,
-            `${round.found}/${round.count} completed · ${(round.elapsedMs / 1000).toFixed(1)}s elapsed · ${round.mistakes} wrong attempts.`,
-          );
-        else if (round.mode === "focus") {
-          const timings = round.numberTimings || [],
-            human = timings.filter((t) => t.actor !== "system");
-          if (human.length)
-            addParagraph(
-              container,
-              `Your pace: ${(human.reduce((s, t) => s + t.seconds, 0) / human.length).toFixed(2)}s per correct tap. Errors: ${round.mistakes}.`,
-            );
-          if (round.goalSeconds) {
-            const delta = round.elapsedMs / 1000 - round.goalSeconds;
-            addParagraph(
-              container,
-              `Training target: ${round.goalSeconds}s · ${delta <= 0 ? Math.abs(delta).toFixed(1) + "s ahead" : "+" + delta.toFixed(1) + "s over target"}. No forced cutoff.`,
-            );
-          }
-        }
-        addParagraph(container, personalTrend(same));
-        const next = challengeRecommendation(same);
-        if (next) {
-          const b = document.createElement("button");
-          b.className = "secondary";
-          b.textContent = "↗ " + next.label;
-          b.addEventListener("click", () => {
-            next.apply();
-            container.hidden = true;
-            $("gameSettings").open = false;
-            renderProfileSummary();
-          });
-          container.append(b);
-        }
-      }
-      function renderPersonalProgress(all) {
-        const div = $("personalProgress");
-        div.replaceChildren();
-        const h = document.createElement("h3");
-        h.textContent = "📈 Personal progress";
-        div.append(h);
-        if (!all.length) {
-          addParagraph(div, "Play several rounds to track improvement against your own earlier attempts.");
-          return;
-        }
-        const groups = new Map();
-        for (const r of all) {
-          const k = [r.mode, r.variant, r.study, r.rotation].join("|");
-          if (!groups.has(k)) groups.set(k, []);
-          groups.get(k).push(r);
-        }
-        const items = [...groups.values()].sort((a, b) => b[0].at.localeCompare(a[0].at)).slice(0, 8);
-        for (const rows of items) {
-          addParagraph(div, `${GAME_NAMES[rows[0].mode]} · ${rows[0].variant} — ${personalTrend(rows)}`);
-        }
-        addParagraph(
-          div,
-          "Only identical settings are compared. Suggestions require three consecutive strong rounds in the same configuration.",
-        );
+        updateLevelBar();
+        renderStats(all);
+        renderHistory(all);
       }
       function renderStats(all) {
         const container = $("overallStats");
         container.replaceChildren();
-        addMetric(container, all.length, "Total rounds");
-        const indexed = all.filter((r) => r.mode !== "speed");
-        addMetric(
-          container,
-          indexed.length ? Math.round(indexed.reduce((s, r) => s + r.score, 0) / indexed.length) : "—",
-          "Avg score index",
-        );
-        addMetric(
-          container,
-          indexed.length ? Math.max(...indexed.map((r) => r.score)) : "—",
-          "Best score index",
-        );
-        renderPersonalProgress(all);
+        let stars = 0,
+          passed = 0,
+          levels = 0;
+        for (const g of LEVEL_GAMES) {
+          stars += [...bestStarsByLevel(g).values()].reduce((s, n) => s + n, 0);
+          passed += highestPassed(g);
+          levels += ladder(g).length;
+        }
+        addMetric(container, `${stars}`, `Stars of ${levels * 3}`);
+        addMetric(container, `${passed}`, `Levels of ${levels}`);
+        addMetric(container, all.filter((r) => r.schema === 2).length, "Rounds played");
         const cards = $("modeStats");
         cards.replaceChildren();
-        for (const [name, label] of Object.entries(GAME_NAMES)) {
-          const rows = all.filter((r) => r.mode === name);
-          const avg = rows.length ? Math.round(rows.reduce((s, r) => s + r.score, 0) / rows.length) : "—";
-          const best = rows.length ? Math.max(...rows.map((r) => r.score)) : "—";
-          const wins = rows.filter((r) => r.outcome === "win").length;
+        for (const g of LEVEL_GAMES) {
+          const rows = levelRounds(g),
+            practice = all.filter((r) => r.schema === 2 && r.practice && r.game === g).length;
+          const best = bestStarsByLevel(g),
+            gStars = [...best.values()].reduce((s, n) => s + n, 0),
+            top = highestPassed(g),
+            max = ladder(g).length;
           const card = document.createElement("div");
           card.className = "mode-stat-card";
           const info = document.createElement("div");
           const title = document.createElement("div");
           title.className = "mode-name";
-          title.textContent = label;
+          title.textContent = GAME_NAMES[g];
           const sub = document.createElement("div");
           sub.className = "mode-sub";
-          sub.textContent = `${rows.length} rounds · ${wins} wins`;
-          info.append(title, sub);
+          const recent = rows.slice(0, 20);
+          const rate = recent.length
+            ? Math.round((100 * recent.filter((r) => r.passed).length) / recent.length)
+            : 0;
+          sub.textContent = `${rows.length} level rounds${recent.length ? ` · ${rate}% passed (last ${recent.length})` : ""}${practice ? ` · ${practice} practice` : ""}`;
+          const bar = document.createElement("div");
+          bar.className = "progress-bar";
+          const fill = document.createElement("span");
+          fill.style.width = `${(100 * top) / max}%`;
+          bar.append(fill);
+          info.append(title, sub, bar);
           const figures = document.createElement("div");
           figures.className = "mode-figures";
           for (const [value, caption] of [
-            [avg, "Average"],
-            [best, "Best"],
+            [`${top}/${max}`, "Level"],
+            [`${gStars}`, "Stars"],
           ]) {
             const box = document.createElement("div");
             const strong = document.createElement("strong");
-            strong.textContent = String(value);
+            strong.textContent = value;
             const small = document.createElement("small");
             small.textContent = caption;
             box.append(strong, small);
@@ -6484,7 +6890,6 @@
           return new Date(iso).toLocaleString("en-AU", {
             day: "numeric",
             month: "short",
-            year: "numeric",
             hour: "2-digit",
             minute: "2-digit",
           });
@@ -6492,102 +6897,42 @@
           return String(iso);
         }
       }
-      // All rounds are preserved in storage. Charts group related games visually only.
-      // Category Match and the older Fruits/Animals modes share one chart.
-      const HISTORY_GROUPS = [
-        { key: "focus", name: "🔢 Numbers", modes: ["focus"] },
-        { key: "coop", name: "🤝 Numbers Co-op", modes: ["coop"] },
-        { key: "memory", name: "🧠 Memory", modes: ["memory"] },
-        { key: "category", name: "🧩 Categories", modes: ["category", "fruit", "animal"] },
-        { key: "pattern", name: "🔒 Pattern", modes: ["pattern"] },
-        { key: "links", name: "🔗 Number Links", modes: ["links"] },
-        { key: "digits", name: "🔟 Sequence Recall", modes: ["digits"] },
-        { key: "speed", name: "🎯 Speed Target", modes: ["speed"] },
-      ];
-      const HISTORY_PALETTE = [
-        "#83edd3",
-        "#ffb26b",
-        "#81b7ff",
-        "#d4a4ff",
-        "#ff8eac",
-        "#fee278",
-        "#86df95",
-        "#bcbcca",
-        "#83cde0",
-        "#fcafdd",
-      ];
-      const HISTORY_NS = "http://www.w3.org/2000/svg";
+      const STAR_COLORS = ["#ff8e9a", "#81b7ff", "#83edd3", "#ffd166"];
       function historySvg(tag, attrs) {
-        const el = document.createElementNS(HISTORY_NS, tag);
+        const el = document.createElementNS(NS, tag);
         for (const [name, val] of Object.entries(attrs)) el.setAttribute(name, val);
         return el;
       }
-      function historyPlotGroup(r) {
-        if (r.mode === "fruit") return "Fruits · " + (r.count || "") + " items";
-        if (r.mode === "animal") return "Animals · " + (r.count || "") + " items";
-        return r.variant || "Standard";
+      function roundDetail(r) {
+        const secs = ((Number(r.elapsedMs) || 0) / 1000).toFixed(1);
+        const extra =
+          r.game === "speed"
+            ? `${r.found} hits · ${r.misses ?? 0} missed · ${r.score} pts`
+            : `${secs}s · ${r.mistakes} mistake${r.mistakes === 1 ? "" : "s"}`;
+        return `${formatDate(r.at)} · Level ${r.level} · ${starString(r.stars)} · ${extra}`;
       }
-      function historyMetricValue(r, metric) {
-        if (metric === "score") return Math.max(0, Math.min(1000, Number(r.score) || 0));
-        if (metric === "time") return Math.max(0, Number(r.elapsedMs || 0) / 1000);
-        if (metric === "errors")
-          return Math.max(0, Number(r.mode === "speed" ? (r.misses ?? r.mistakes) : r.mistakes) || 0);
-        // For Speed Target, an attempt includes timeout; for other games accuracy is per selection/attempt.
-        const found = Math.max(
-          0,
-          Number(r.mode === "coop" ? (r.humanFound ?? Math.ceil((Number(r.found) || 0) / 2)) : r.found) || 0,
-        );
-        const missed = Math.max(0, Number(r.mode === "speed" ? (r.misses ?? r.mistakes) : r.mistakes) || 0);
-        const total = found + missed;
-        return total ? (100 * found) / total : 0;
-      }
-      function historyRoundDetail(r, metric) {
-        const mode = r.mode === "speed" ? "hits" : r.mode === "pattern" ? "steps" : "found";
-        const misses = r.mode === "speed" ? (r.misses ?? r.mistakes) : r.mistakes;
-        const percentage = historyMetricValue(r, "accuracy");
-        return `${formatDate(r.at)} · ${r.found ?? 0}${r.count && r.mode !== "speed" ? "/" + r.count : ""} ${mode} · ${misses ?? 0} missed · ${percentage.toFixed(0)}% accuracy · ${(Number(r.elapsedMs || 0) / 1000).toFixed(1)}s · ${r.score} score`;
-      }
-      function historyAxisMax(values, metric) {
-        if (metric === "score") return 1000;
-        if (metric === "accuracy") return 100;
-        const biggest = Math.max(0, ...values);
-        if (metric === "time") return Math.max(10, Math.ceil(biggest / 10) * 10);
-        return Math.max(4, Math.ceil(biggest / 4) * 4);
-      }
-      function historyFormatValue(value, metric) {
-        if (metric === "accuracy") return Math.round(value) + "%";
-        if (metric === "time") return (value >= 100 ? Math.round(value) : value.toFixed(1)) + "s";
-        return Math.round(value).toLocaleString("en-US");
-      }
-      function historyDetailNode() {
-        const el = document.createElement("div");
-        el.className = "history-tap-detail";
-        el.setAttribute("aria-live", "polite");
-        return el;
-      }
-      function buildHistoryChart(group, rows, metric, windowSize) {
+      function buildLevelChart(game, rows, windowSize) {
+        const max = ladder(game).length;
         const card = document.createElement("section");
         card.className = "history-chart-card";
-        card.setAttribute("aria-label", group.name + " history chart");
         const top = document.createElement("div");
         top.className = "history-chart-top";
         const title = document.createElement("h2");
-        title.textContent = group.name;
+        title.textContent = GAME_NAMES[game];
         const counter = document.createElement("span");
         counter.className = "round-count";
-        counter.textContent = rows.length + " rounds";
+        counter.textContent = rows.length + (rows.length === 1 ? " round" : " rounds");
         top.append(title, counter);
         card.append(top);
+        const shown = rows.slice(0, windowSize).reverse();
         const kpis = document.createElement("div");
         kpis.className = "history-kpis";
-        const allValues = rows.map((r) => historyMetricValue(r, metric));
-        const average = allValues.reduce((s, n) => s + n, 0) / allValues.length;
-        const best =
-          metric === "time" || metric === "errors" ? Math.min(...allValues) : Math.max(...allValues);
+        const rate = Math.round((100 * shown.filter((r) => r.passed).length) / shown.length);
+        const stars = [...bestStarsByLevel(game).values()].reduce((s, n) => s + n, 0);
         for (const [label, val] of [
-          ["Avg · all", historyFormatValue(average, metric)],
-          [metric === "time" || metric === "errors" ? "Lowest" : "Best", historyFormatValue(best, metric)],
-          ["Latest", historyFormatValue(allValues[0], metric)],
+          ["Highest passed", `${highestPassed(game)}/${max}`],
+          [`Pass rate (${shown.length})`, rate + "%"],
+          ["Stars", `${stars}/${max * 3}`],
         ]) {
           const box = document.createElement("div");
           box.className = "history-kpi";
@@ -6599,201 +6944,137 @@
           kpis.append(box);
         }
         card.append(kpis);
-        const chronological = rows.slice(0, windowSize).reverse();
-        const seriesMap = new Map();
-        for (const r of chronological) {
-          const variant = historyPlotGroup(r);
-          if (!seriesMap.has(variant)) seriesMap.set(variant, []);
-          seriesMap.get(variant).push(r);
-        }
-        const variants = [...seriesMap.keys()];
-        const width = Math.max(340, Math.min(2600, 96 + Math.max(chronological.length - 1, 1) * 23));
-        const height = 230,
-          left = 43,
-          right = 20,
-          topSpace = 15,
-          bottom = 35,
+        const width = Math.max(320, 60 + shown.length * 22),
+          height = 200,
+          left = 34,
+          right = 14,
+          topPad = 12,
+          bottom = 28,
           plotW = width - left - right,
-          plotH = height - topSpace - bottom;
-        const ymax = historyAxisMax(
-          chronological.map((r) => historyMetricValue(r, metric)),
-          metric,
-        );
-        const xFor = (index) =>
-          left + (chronological.length <= 1 ? plotW / 2 : (index / (chronological.length - 1)) * plotW);
-        const yFor = (value) => topSpace + plotH - (Math.max(0, value) / ymax) * plotH;
+          plotH = height - topPad - bottom;
+        const x = (i) => left + (shown.length <= 1 ? plotW / 2 : (i / (shown.length - 1)) * plotW);
+        const y = (lvl) => topPad + plotH - ((lvl - 1) / Math.max(1, max - 1)) * plotH;
         const scroller = document.createElement("div");
         scroller.className = "history-plot";
-        scroller.setAttribute("role", "region");
-        scroller.setAttribute("aria-label", group.name + " " + metric + " chart, swipe horizontally");
-        scroller.tabIndex = 0;
-        const svg = historySvg("svg", {
+        const svgEl = historySvg("svg", {
           class: "history-svg",
           width,
           height,
           viewBox: `0 0 ${width} ${height}`,
           role: "img",
-          "aria-label": `${group.name} ${metric} trend across ${chronological.length} recent rounds`,
+          "aria-label": `${GAME_NAMES[game]}: level played per round`,
         });
-        // Four equal y-axis bands keep charts visually comparable.
-        for (let tick = 0; tick <= 4; tick++) {
-          const y = topSpace + plotH * (tick / 4),
-            label = (ymax * (4 - tick)) / 4;
-          svg.append(
-            historySvg("line", { class: "history-grid-line", x1: left, x2: width - right, y1: y, y2: y }),
+        for (let lvl = 1; lvl <= max; lvl++) {
+          if (lvl !== 1 && lvl !== max && lvl % (max > 10 ? 3 : 2)) continue;
+          svgEl.append(
+            historySvg("line", {
+              class: "history-grid-line",
+              x1: left,
+              x2: width - right,
+              y1: y(lvl),
+              y2: y(lvl),
+            }),
           );
-          const txt = historySvg("text", {
+          const t = historySvg("text", {
             class: "history-axis",
-            x: left - 8,
-            y: y + 3,
+            x: left - 7,
+            y: y(lvl) + 3,
             "text-anchor": "end",
           });
-          txt.textContent =
-            metric === "accuracy"
-              ? label.toFixed(0)
-              : metric === "time"
-                ? label.toFixed(0)
-                : Math.round(label);
-          svg.append(txt);
+          t.textContent = "L" + lvl;
+          svgEl.append(t);
         }
-        // A dashed horizontal average helps identify performance changes.
-        const avgY = yFor(average);
-        if (Number.isFinite(avgY))
-          svg.append(
-            historySvg("line", { class: "history-guide", x1: left, x2: width - right, y1: avgY, y2: avgY }),
-          );
-        const tickPositions = new Set([0, chronological.length - 1]);
-        if (chronological.length > 6) {
-          for (let i = 4; i < chronological.length - 1; i += 5) tickPositions.add(i);
-        }
-        for (const i of [...tickPositions].sort((a, b) => a - b)) {
-          const r = chronological[i];
-          if (!r) continue;
-          const lab = historySvg("text", {
-            class: "history-axis",
-            x: xFor(i),
-            y: height - 13,
-            "text-anchor": "middle",
-          });
-          const date = new Date(r.at);
-          lab.textContent = Number.isFinite(date.getTime())
-            ? `${date.getDate()}/${date.getMonth() + 1}`
-            : "#" + (i + 1);
-          svg.append(lab);
-        }
-        const detail = historyDetailNode();
-        function showDetail(r) {
-          detail.replaceChildren();
-          const bold = document.createElement("b");
-          bold.textContent =
-            historyPlotGroup(r) + " · " + historyFormatValue(historyMetricValue(r, metric), metric);
-          const small = document.createElement("span");
-          small.className = "detail-mini";
-          small.textContent = historyRoundDetail(r, metric);
-          detail.append(bold, small);
-        }
-        const controls = [];
-        const groupElements = new Map();
-        variants.forEach((variant, i) => {
-          const points = chronological
-            .map((r, j) => ({ r, j }))
-            .filter((v) => historyPlotGroup(v.r) === variant);
-          const color = HISTORY_PALETTE[i % HISTORY_PALETTE.length];
-          const layer = historySvg("g", {});
-          if (points.length > 1) {
-            const d = points
-              .map(
-                (p, k) =>
-                  `${k ? "L" : "M"} ${xFor(p.j).toFixed(2)} ${yFor(historyMetricValue(p.r, metric)).toFixed(2)}`,
-              )
-              .join(" ");
-            layer.append(historySvg("path", { d, class: "history-series", stroke: color }));
-          }
-          for (const point of points) {
-            const x = xFor(point.j),
-              y = yFor(historyMetricValue(point.r, metric));
-            const circle = historySvg("circle", {
-              class: "history-point",
-              cx: x,
-              cy: y,
-              r: 5,
-              fill: color,
-              tabindex: "0",
-              role: "button",
-              "aria-label": `${historyPlotGroup(point.r)} ${historyFormatValue(historyMetricValue(point.r, metric), metric)} on ${formatDate(point.r.at)}`,
-            });
-            circle.addEventListener("click", () => showDetail(point.r));
-            circle.addEventListener("keydown", (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                showDetail(point.r);
-              }
-            });
-            layer.append(circle);
-            const hit = historySvg("circle", { class: "history-hit", cx: x, cy: y, r: 11 });
-            hit.addEventListener("click", () => showDetail(point.r));
-            layer.append(hit);
-          }
-          svg.append(layer);
-          groupElements.set(variant, layer);
-          controls.push({ variant, color });
+        // Step line: highest level passed so far (within the shown window).
+        let reached = 0,
+          d = "";
+        shown.forEach((r, i) => {
+          if (r.passed) reached = Math.max(reached, r.level);
+          if (reached) d += `${d ? "L" : "M"}${x(i).toFixed(1)} ${y(reached).toFixed(1)} `;
         });
-        scroller.append(svg);
-        card.append(scroller);
-        const keys = document.createElement("div");
-        keys.className = "history-key";
-        keys.setAttribute("aria-label", "Toggle chart series");
-        for (const { variant, color } of controls) {
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.setAttribute("aria-pressed", "true");
-          btn.title = variant;
-          const dot = document.createElement("span");
-          dot.className = "swatch";
-          dot.style.background = color;
-          const name = document.createElement("span");
-          name.textContent = variant;
-          btn.append(dot, name);
-          btn.addEventListener("click", () => {
-            const enabled = btn.getAttribute("aria-pressed") !== "true";
-            btn.setAttribute("aria-pressed", String(enabled));
-            groupElements.get(variant).style.display = enabled ? "" : "none";
+        if (d)
+          svgEl.append(historySvg("path", { d, class: "history-series", stroke: "#83edd3", opacity: ".55" }));
+        const detail = document.createElement("div");
+        detail.className = "history-tap-detail";
+        detail.setAttribute("aria-live", "polite");
+        const show = (r) => (detail.textContent = roundDetail(r));
+        shown.forEach((r, i) => {
+          const c = historySvg("circle", {
+            class: "history-point",
+            cx: x(i),
+            cy: y(r.level),
+            r: 5.5,
+            fill: r.passed ? STAR_COLORS[r.stars] : "#0e1b2c",
+            stroke: r.passed ? "#0b1728" : STAR_COLORS[0],
+            "stroke-width": r.passed ? 2 : 2.5,
+            tabindex: "0",
+            role: "button",
+            "aria-label": roundDetail(r),
           });
-          keys.append(btn);
+          c.addEventListener("click", () => show(r));
+          c.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              show(r);
+            }
+          });
+          svgEl.append(c);
+        });
+        if (shown.length) {
+          const first = historySvg("text", {
+            class: "history-axis",
+            x: x(0),
+            y: height - 9,
+            "text-anchor": "start",
+          });
+          first.textContent = formatDate(shown[0].at).split(",")[0];
+          const last = historySvg("text", {
+            class: "history-axis",
+            x: x(shown.length - 1),
+            y: height - 9,
+            "text-anchor": "end",
+          });
+          last.textContent = formatDate(shown[shown.length - 1].at).split(",")[0];
+          svgEl.append(first);
+          if (shown.length > 1) svgEl.append(last);
         }
-        card.append(keys);
-        showDetail(rows[0]);
+        scroller.append(svgEl);
+        card.append(scroller);
+        show(rows[0]);
         card.append(detail);
-        if (rows.length > windowSize) {
-          const note = document.createElement("p");
-          note.className = "history-mininote";
-          note.textContent = `Displaying latest ${Math.min(rows.length, windowSize)} of ${rows.length} rounds — all records remain saved.`;
-          card.append(note);
-        }
+        requestAnimationFrame(() => (scroller.scrollLeft = scroller.scrollWidth));
         return card;
       }
       function renderHistory(all) {
         const selected = $("historyFilter").value,
-          metric = $("historyMetric").value,
-          windowSize = Number($("historyWindow").value) || 30;
-        const groups = HISTORY_GROUPS.filter((g) => selected === "all" || selected === g.key);
-        const filtered = all.filter((r) => groups.some((g) => g.modes.includes(r.mode)));
-        $("historySummary").textContent = `${filtered.length} rounds · ${activeProfile().name}`;
+          windowSize = Number($("historyWindow").value) || 50;
+        const games = LEVEL_GAMES.filter((g) => selected === "all" || selected === g);
         const list = $("historyList");
         list.replaceChildren();
-        if (!filtered.length) {
+        let count = 0;
+        const key = document.createElement("p");
+        key.className = "history-mininote";
+        key.textContent =
+          "Each dot is one level round · red ring = not passed · blue ★ · green ★★ · gold ★★★ · line = highest level passed";
+        list.append(key);
+        for (const g of games) {
+          const rows = levelRounds(g).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+          if (!rows.length) continue;
+          count += rows.length;
+          list.append(buildLevelChart(g, rows, windowSize));
+        }
+        $("historySummary").textContent = `${count} level rounds · ${activeProfile().name}`;
+        if (!count) {
           const div = document.createElement("div");
           div.className = "empty-state";
-          div.textContent = "No saved rounds yet. Finish a game to see your progress charts.";
+          div.textContent = "No level rounds yet. Play a level to see your progress here.";
           list.append(div);
-          return;
         }
-        for (const group of groups) {
-          const rows = all
-            .filter((r) => group.modes.includes(r.mode))
-            .sort((a, b) => String(b.at).localeCompare(String(a.at)));
-          if (!rows.length) continue;
-          list.append(buildHistoryChart(group, rows, metric, windowSize));
+        const archived = all.filter((r) => r.schema !== 2).length;
+        if (archived) {
+          const note = document.createElement("p");
+          note.className = "archive-note";
+          note.textContent = `${archived} round${archived === 1 ? "" : "s"} from the old 0–1,000 scoring are archived: kept in backups, not charted.`;
+          list.append(note);
         }
       }
       function goToScreen(name) {
@@ -6831,7 +7112,7 @@
         });
         $("closeProfiles").addEventListener("click", () => $("profileDialog").close());
         $("profileSelect").addEventListener("change", (e) => switchProfile(e.target.value));
-        for (const id of ["historyFilter", "historyMetric", "historyWindow"])
+        for (const id of ["historyFilter", "historyWindow"])
           $(id).addEventListener("change", renderProfileSummary);
         $("createProfile").addEventListener("click", () => {
           const name = cleanPlayerName($("newProfileName").value);
@@ -6850,6 +7131,7 @@
           $("newProfileName").value = "";
           saveProfiles();
           updateProfileUi();
+          resetLevelSelection();
           renderProfileSummary();
         });
         $("renameProfile").addEventListener("click", () => {
@@ -6884,6 +7166,7 @@
           profilesDb.activeId = profilesDb.profiles[0].id;
           saveProfiles();
           updateProfileUi();
+          resetLevelSelection();
           renderProfileSummary();
         });
         $("clearHistory").addEventListener("click", () => {
@@ -6897,6 +7180,7 @@
           profilesDb.rounds = profilesDb.rounds.filter((r) => r.profileId !== profilesDb.activeId);
           saveProfiles();
           updateProfileUi();
+          resetLevelSelection();
           renderProfileSummary();
         });
         $("exportData").addEventListener("click", exportBackup);
@@ -6918,6 +7202,7 @@
             profilesDb = parsed;
             saveProfiles();
             updateProfileUi();
+            resetLevelSelection();
             renderProfileSummary();
             goToScreen("stats");
             $("profileDialog").close();
@@ -6973,8 +7258,8 @@
       syncDigitSettings();
       makePatternBoard();
       preloadAnimalSounds();
-      updateLevelUi();
-      resetGame();
+      bindLevelUi();
+      setPlayType(false);
       renderProfileSummary();
 
       // Close the compact options popover when tapping outside it.
@@ -6982,14 +7267,6 @@
         const details = $("gameSettings");
         if (details.open && !details.contains(e.target)) details.open = false;
       });
-    </script>
-    <script>
-      if (
-        "serviceWorker" in navigator &&
-        (location.protocol === "https:" || location.hostname === "localhost")
-      ) {
-        window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
-      }
     </script>
   </body>
 </html>
