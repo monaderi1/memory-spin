@@ -2769,6 +2769,9 @@
         border-color: #ff8c9a66;
         color: #ffd0d6;
       }
+      #overlayText {
+        white-space: pre-line;
+      }
       .goal-list {
         font-size: 11px;
         color: #cfe0f5;
@@ -4702,6 +4705,22 @@
           (isCoop() ? "Co-op: odd numbers are yours; the system automatically finds even numbers. " : "") +
           errors;
       }
+      // One action line + one facts line. The long introText() remains only as the Help footer source.
+      function quickIntro() {
+        const t = Number.isFinite(gameDuration()) ? `⏱ ${limitSecs()}s` : "⏱ no limit";
+        const look = `👁 ${studySecs()}s look`;
+        if (mode === "speed")
+          return `Tap the target shown in the centre.\n${t} · ${speedWindowMs / 1000}s per target · ${speedRingCount} ring${speedRingCount > 1 ? "s" : ""}`;
+        if (mode === "digits")
+          return `Remember ${digitLength} ${isPictureRecall() ? recallLabel().toLowerCase() : "digits"}, then enter them forward or backward.\n${look} · ⏱ ${digitAnswerMs === Infinity ? "no limit" : digitAnswerMs / 1000 + "s"}`;
+        if (mode === "pattern")
+          return `Watch the pattern, then draw it in one swipe${patternBackward ? " — BACKWARDS" : ""}.\n${look} · ${t} · one attempt`;
+        if (mode === "links")
+          return `Remember the number order. They shuffle — connect the same order.\n${look} · ${t} · one attempt`;
+        if (mode === "category")
+          return `Remember where the ${currentCategoryLabel().toLowerCase()} are, then find each one.\n${look} · ${t}`;
+        return `Tap 1 → 50 in order.\n${look} · ${t}${spinAllowed() ? " · spinning" : ""}`;
+      }
       function introText() {
         if (mode === "digits")
           return `Memorize ${digitLength} ${isPictureRecall() ? recallLabel().toLowerCase() : "digits"} from left to right. After hiding the sequence, the game randomly requests FORWARD or REVERSE recall. ${isPictureRecall() ? "Tap the pictures from the shuffled choices." : "Use the number keypad."} ${digitPreviewMode === "unlimited" ? "Study as long as you need, then tap Start Now." : "Study for " + digitPreviewMs / 1000 + " seconds."} ${digitAnswerMs ? "You then have " + digitAnswerMs / 1000 + " seconds." : "There is no response time limit."} Correct complete recall earns 1,000 points.`;
@@ -5809,7 +5828,7 @@
                   : mode === "category"
                     ? currentCategoryLabel() + " Match 🧩"
                     : "Number Focus 🔢",
-          introText(),
+          quickIntro(),
           mode === "speed"
             ? `Start ${limitSecs()}-second round`
             : currentPreviewUnlimited()
@@ -6680,27 +6699,24 @@
           return `${L.cat === "number" ? "Numbers" : CATEGORY_SETS[L.cat].label} · ${L.time}s round · ${L.rings} ring${L.rings > 1 ? "s" : ""} · ${L.window}s/target · ${L.rate}`;
         return "";
       }
+      // Short, scannable goals: the round may be 20 seconds, so reading must take ~3.
       function levelGoals(game, L) {
         if (game === "speed") {
-          return [
-            `Score ≥ ${L.s1} (${L.goal} hits in ${L.time}s, no misses = 1,000)`,
-            `Score ≥ ${L.s2}`,
-            `Score ≥ ${L.s3}`,
-          ];
+          const hits = (score) => Math.ceil((score / 1000) * L.goal);
+          return [`${hits(L.s1)} hits`, `${hits(L.s2)} hits`, `${hits(L.s3)} hits · misses cost points`];
         }
-        if (game === "focus" || game === "category") {
-          const all = game === "focus" ? "Find 1–50" : `Find all ${L.count}`;
+        const mistakes = (m) => (m ? `≤ ${m} mistake${m === 1 ? "" : "s"}` : "no mistakes");
+        if (game === "focus" || game === "category")
           return [
-            all + (Number.isFinite(L.time) ? ` within ${L.time}s` : ""),
-            `…in ≤ ${L.t2}s with ≤ ${L.m2} mistake${L.m2 === 1 ? "" : "s"}`,
-            `…in ≤ ${L.t3}s with ${L.m3 ? "≤ " + L.m3 : "no"} mistake${L.m3 === 1 ? "" : "s"}`,
+            Number.isFinite(L.time) ? `Finish in ${L.time}s` : "Finish",
+            `≤ ${L.t2}s · ${mistakes(L.m2)}`,
+            `≤ ${L.t3}s · ${mistakes(L.m3)}`,
           ];
-        }
-        const first =
-          game === "pattern" && L.backward
-            ? "Perfect, drawn backwards (last dot → first)"
-            : "Perfect answer, one attempt";
-        return [first, `…in ≤ ${L.t2}s`, `…in ≤ ${L.t3}s`];
+        return [
+          game === "pattern" && L.backward ? "Correct, backwards" : "Correct",
+          `≤ ${L.t2}s`,
+          `≤ ${L.t3}s`,
+        ];
       }
       function starsFor(game, L, r) {
         if (game === "speed") {
