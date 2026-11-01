@@ -5478,8 +5478,17 @@
           startGame(); // Timed preview starts automatically; unlimited study waits for Start Now.
         }, 850);
       }
+      function guardOverlayTaps() {
+        // On touch screens, the finger-lift that ends a swipe or the last tap is turned into a "click"
+        // at the same spot a moment later. The result overlay appears right under that finger, so without
+        // this guard the ghost click presses Replay/Next and silently starts a new round.
+        refs.overlay.style.pointerEvents = "none";
+        clearTimeout(guardOverlayTaps.timer);
+        guardOverlayTaps.timer = setTimeout(() => (refs.overlay.style.pointerEvents = ""), 700);
+      }
       function finish(reason) {
         if (state !== "playing") return;
+        guardOverlayTaps();
         if (mode === "digits") {
           digitCorrectPositions = digitCountCorrect();
           mistakeCount = digitLength - digitCorrectPositions;
@@ -6748,8 +6757,10 @@
           $("startButton").textContent = round.stars < 3 ? "Retry for ★★★" : "Replay";
           $("startButton").classList.add("as-secondary");
         } else {
-          $("startButton").textContent = round.passed ? "Replay" : "Retry level";
+          $("startButton").textContent = round.passed ? "Replay level" : "Retry level";
         }
+        if (round.passed && !hasNext)
+          banner.append(document.createTextNode(`🏆 All ${ladder(round.game).length} levels complete!`));
         updateLevelBar();
       }
       function renderGoalsInto(container, goals, earned) {
