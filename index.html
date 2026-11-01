@@ -4557,7 +4557,11 @@
       }
       function gameDuration() {
         const level = activeLevel();
-        if (level && level.time !== undefined && ["focus", "category", "pattern", "links"].includes(mode))
+        if (
+          level &&
+          level.time !== undefined &&
+          ["focus", "category", "pattern", "links", "speed"].includes(mode)
+        )
           return level.time * 1000;
         return mode === "digits"
           ? digitAnswerMs
@@ -4642,7 +4646,7 @@
         } else if (mode === "digits") {
           refs.instructions.textContent = `Memorize ${digitLength} ${isPictureRecall() ? recallLabel().toLowerCase() : "digits"}, then recall forward or reverse.`;
         } else if (mode === "speed") {
-          refs.instructions.textContent = `${speedCategoryLabel()} · ${speedWindowMs / 1000}s per target · 60s total.`;
+          refs.instructions.textContent = `${speedCategoryLabel()} · ${speedWindowMs / 1000}s per target · ${limitSecs()}s total.`;
           updateSpeedRules();
         }
         updateHelp();
@@ -4680,7 +4684,7 @@
           return;
         }
         if (mode === "speed") {
-          refs.help.textContent = `60 seconds total · ${speedWindowMs / 1000} seconds per ${speedCategoryLabel().toLowerCase()} target · ${currentItemCount()} visible choices. Wrong taps and timeouts count as misses. For 1,000 points, reach ${speedGoalHits()} correct with zero misses.`;
+          refs.help.textContent = `${limitSecs()} seconds total · ${speedWindowMs / 1000} seconds per ${speedCategoryLabel().toLowerCase()} target · ${currentItemCount()} visible choices. Wrong taps and timeouts count as misses. For 1,000 points, reach ${speedGoalHits()} correct with zero misses.`;
           return;
         }
         refs.help.textContent =
@@ -4702,7 +4706,7 @@
         if (mode === "digits")
           return `Memorize ${digitLength} ${isPictureRecall() ? recallLabel().toLowerCase() : "digits"} from left to right. After hiding the sequence, the game randomly requests FORWARD or REVERSE recall. ${isPictureRecall() ? "Tap the pictures from the shuffled choices." : "Use the number keypad."} ${digitPreviewMode === "unlimited" ? "Study as long as you need, then tap Start Now." : "Study for " + digitPreviewMs / 1000 + " seconds."} ${digitAnswerMs ? "You then have " + digitAnswerMs / 1000 + " seconds." : "There is no response time limit."} Correct complete recall earns 1,000 points.`;
         if (mode === "speed")
-          return `Find the ${speedCategoryLabel().toLowerCase()} shown in the centre. ${currentItemCount()} choices across ${speedRingCount} ${speedRingCount === 1 ? "ring" : "rings"}. You have ${speedWindowMs / 1000} seconds per target, 60 seconds total. Wrong taps and timeouts lower accuracy. A perfect 1,000 requires ${speedGoalHits()} hits and no misses. Targets change immediately. Starts immediately.`;
+          return `Find the ${speedCategoryLabel().toLowerCase()} shown in the centre. ${currentItemCount()} choices across ${speedRingCount} ${speedRingCount === 1 ? "ring" : "rings"}. You have ${speedWindowMs / 1000} seconds per target, ${limitSecs()} seconds total. Wrong taps and timeouts lower accuracy. A perfect 1,000 requires ${speedGoalHits()} hits and no misses. Targets change immediately. Starts immediately.`;
         if (mode === "links")
           return (
             `Study ${linksLength} connected numbers ${studyMode === "unlimited" ? "as long as you need" : `for ${studySecs()} seconds`}. The arrows disappear and all nine numbers SHUFFLE. Draw one continuous line through the SAME NUMBERS in the SAME ORDER (not the same shape). You have ${limitSecs()} seconds and one attempt.` +
@@ -4791,6 +4795,8 @@
           : speedItems()[key - 1];
       }
       function speedGoalHits() {
+        const level = activeLevel();
+        if (mode === "speed" && level && level.goal) return level.goal;
         return { 3: 20, 4: 15, 5: 12, 7: 9 }[speedWindowMs / 1000] || 12;
       }
       function speedScoreNow() {
@@ -4801,7 +4807,7 @@
         $("speedVisibleCount").hidden = !picture;
         $("speedVisibleCountLabel").hidden = !picture;
         $("speedRules").textContent =
-          `60-second round · ${speedWindowMs / 1000}s per target · ${picture ? speedVisibleCount + (speedCategory === "word" ? " words" : " icons") : currentItemCount() + " numbers"} · 1,000 points requires ${speedGoalHits()} hits and zero misses.`;
+          `${limitSecs()}-second round · ${speedWindowMs / 1000}s per target · ${picture ? speedVisibleCount + (speedCategory === "word" ? " words" : " icons") : currentItemCount() + " numbers"} · 1,000 points requires ${speedGoalHits()} hits and zero misses.`;
       }
       const NUMBER_ITEMS = Array.from({ length: 12 }, (_, i) => ({
         icon: String(i + 1),
@@ -5805,7 +5811,7 @@
                     : "Number Focus 🔢",
           introText(),
           mode === "speed"
-            ? "Start 60-second round"
+            ? `Start ${limitSecs()}-second round`
             : currentPreviewUnlimited()
               ? mode === "digits"
                 ? "Show sequence"
@@ -5868,7 +5874,7 @@
         else if (mode === "digits")
           refs.instructions.textContent = `Memorize ${digitLength} ${isPictureRecall() ? recallLabel().toLowerCase() : "digits"}. Recall in a random direction.`;
         else if (mode === "speed")
-          refs.instructions.textContent = `${speedCategoryLabel()} · ${speedWindowMs / 1000}s per target · 60s round.`;
+          refs.instructions.textContent = `${speedCategoryLabel()} · ${speedWindowMs / 1000}s per target · ${limitSecs()}s round.`;
         else
           refs.instructions.textContent = `Memorize the 3×3 lock pattern, then draw it in ${limitSecs()} seconds.`;
         updateLevelUi();
@@ -6568,25 +6574,29 @@
           t3: Math.round(1.5 + 0.9 * length),
           t2: Math.round(3 + 1.8 * length),
         })),
+        // Speed v2: short rounds early, longer (sustained attention) later. "goal" = hits needed for a
+        // full hit score, set by the pace required (seconds per hit), which tightens with level.
         speed: [
-          ["number", 10, 5, 1, "still"],
-          ["number", 10, 5, 2, "still"],
-          ["fruit", 6, 5, 1, "still"],
-          ["number", 10, 5, 2, "slow"],
-          ["animal", 10, 5, 2, "slow"],
-          ["number", 10, 5, 3, "still"],
-          ["flag", 10, 4, 2, "normal"],
-          ["number", 10, 4, 3, "normal"],
-          ["word", 10, 4, 2, "normal"],
-          ["fruit", 15, 4, 3, "normal"],
-          ["number", 10, 3, 3, "fast"],
-          ["flag", 15, 3, 3, "fast"],
-        ].map(([cat, visible, window, rings, rate]) => ({
+          ["number", 10, 5, 1, "still", 20, 6],
+          ["number", 10, 5, 2, "still", 20, 7],
+          ["fruit", 6, 5, 1, "still", 20, 7],
+          ["number", 10, 5, 2, "slow", 20, 8],
+          ["animal", 10, 5, 2, "slow", 30, 11],
+          ["number", 10, 5, 3, "still", 30, 12],
+          ["flag", 10, 4, 2, "normal", 30, 12],
+          ["number", 10, 4, 3, "normal", 30, 14],
+          ["word", 10, 4, 2, "normal", 45, 20],
+          ["fruit", 15, 4, 3, "normal", 45, 22],
+          ["number", 10, 3, 3, "fast", 45, 26],
+          ["flag", 15, 3, 3, "fast", 45, 28],
+        ].map(([cat, visible, window, rings, rate, time, goal]) => ({
           cat,
           visible,
           window,
           rings,
           rate,
+          time,
+          goal,
           s1: 550,
           s2: 750,
           s3: 900,
@@ -6594,7 +6604,7 @@
       };
       const LEVEL_GAMES = ["focus", "category", "pattern", "links", "digits", "speed"];
       // Bump a game's version whenever its ladder changes meaning; older rounds are then archived.
-      const LADDER_VERSION = { pattern: 2 };
+      const LADDER_VERSION = { pattern: 2, speed: 2 };
       function ladderVersion(game) {
         return LADDER_VERSION[game] || 1;
       }
@@ -6667,14 +6677,13 @@
         if (game === "links") return `${L.length} links · ${L.preview}s to look`;
         if (game === "digits") return `${L.length} ${KIND_LABELS[L.kind]} · ${L.preview}s to look`;
         if (game === "speed")
-          return `${L.cat === "number" ? "Numbers" : CATEGORY_SETS[L.cat].label} · ${L.rings} ring${L.rings > 1 ? "s" : ""} · ${L.window}s per target · ${L.rate}`;
+          return `${L.cat === "number" ? "Numbers" : CATEGORY_SETS[L.cat].label} · ${L.time}s round · ${L.rings} ring${L.rings > 1 ? "s" : ""} · ${L.window}s/target · ${L.rate}`;
         return "";
       }
       function levelGoals(game, L) {
         if (game === "speed") {
-          const hits = { 3: 20, 4: 15, 5: 12, 7: 9 }[L.window] || 12;
           return [
-            `Score ≥ ${L.s1} (score = 1,000 × hits ÷ ${hits}, capped, × accuracy)`,
+            `Score ≥ ${L.s1} (${L.goal} hits in ${L.time}s, no misses = 1,000)`,
             `Score ≥ ${L.s2}`,
             `Score ≥ ${L.s3}`,
           ];
