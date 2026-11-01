@@ -4585,8 +4585,7 @@
               : spinEnabled;
       }
       function updateMistakeLabel() {
-        refs.mistakes.textContent =
-          mode === "speed" ? `Wrong: ${mistakeCount} · Missed: ${speedMisses}` : `Mistakes: ${mistakeCount}`;
+        refs.mistakes.textContent = mode === "speed" ? `Misses: ${speedMisses}` : `Mistakes: ${mistakeCount}`;
       }
       function syncRingAnimations() {
         const groups = [...refs.wheel.querySelectorAll(".ring-group")];
@@ -5094,9 +5093,15 @@
         $("speedTargetBadge").classList.remove("warning");
         updateSpeedSummary();
       }
+      function speedProgressText() {
+        const level = activeLevel();
+        if (!level) return `Score: ${speedScoreNow()} / 1,000`;
+        const [, , h3] = speedStarHits(level);
+        return `${speedHits} / ${h3} for ★★★ · misses ${speedMisses}`;
+      }
       function completeSpeedTarget(wasCorrect, reason, now) {
         if (mode !== "speed" || state !== "playing" || speedTargetKey == null) return;
-        if (now - startedAt >= 60000) {
+        if (now - startedAt >= gameDuration()) {
           finish("time");
           return;
         }
@@ -5107,7 +5112,7 @@
           if (speedCategory === "animal") playAnimal(speedItem(speedTargetKey));
           else playEffect("correct");
           setStatus(
-            `✓ ${speedCategory === "number" ? "Hit" : speedItem(speedTargetKey).name}! Score: ${speedScoreNow()} / 1,000`,
+            `✓ ${speedCategory === "number" ? "Hit" : speedItem(speedTargetKey).name}! ${speedProgressText()}`,
           );
         } else {
           speedMisses++;
@@ -5120,7 +5125,7 @@
             playEffect("wrong");
           }
           setStatus(
-            (reason === "timeout" ? "⌛ Timeout" : "✕ Wrong") + ` · Score: ${speedScoreNow()} / 1,000`,
+            (reason === "timeout" ? "⌛ Timeout — miss" : "✕ Wrong — miss") + ` · ${speedProgressText()}`,
             true,
           );
         }
@@ -5130,7 +5135,7 @@
       function selectSpeedCell(g, key) {
         if (mode !== "speed" || state !== "playing" || speedTargetKey == null) return;
         const now = performance.now();
-        if (now - startedAt >= 60000) {
+        if (now - startedAt >= gameDuration()) {
           finish("time");
           return;
         }
@@ -6702,8 +6707,8 @@
       // Short, scannable goals: the round may be 20 seconds, so reading must take ~3.
       function levelGoals(game, L) {
         if (game === "speed") {
-          const hits = (score) => Math.ceil((score / 1000) * L.goal);
-          return [`${hits(L.s1)} hits`, `${hits(L.s2)} hits`, `${hits(L.s3)} hits · misses cost points`];
+          const [h1, h2, h3] = speedStarHits(L);
+          return [`${h1} correct taps`, `${h2} correct · ≤ 1 miss`, `${h3} correct · no misses`];
         }
         const mistakes = (m) => (m ? `≤ ${m} mistake${m === 1 ? "" : "s"}` : "no mistakes");
         if (game === "focus" || game === "category")
@@ -6718,10 +6723,18 @@
           `≤ ${L.t3}s`,
         ];
       }
+      function speedStarHits(L) {
+        return [L.s1, L.s2, L.s3].map((s) => Math.ceil((s / 1000) * L.goal));
+      }
       function starsFor(game, L, r) {
         if (game === "speed") {
-          const s = Number(r.score) || 0;
-          return s >= L.s3 ? 3 : s >= L.s2 ? 2 : s >= L.s1 ? 1 : 0;
+          // Plain rule, exactly as shown to the player. A miss = wrong tap or a target that timed out.
+          const [h1, h2, h3] = speedStarHits(L),
+            hits = Number(r.found) || 0,
+            misses = Number(r.misses ?? r.mistakes) || 0;
+          if (hits >= h3 && misses === 0) return 3;
+          if (hits >= h2 && misses <= 1) return 2;
+          return hits >= h1 ? 1 : 0;
         }
         if (r.outcome !== "win") return 0;
         const t = (Number(r.elapsedMs) || 0) / 1000,

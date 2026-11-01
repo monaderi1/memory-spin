@@ -21,7 +21,7 @@ Every game has a fixed ladder of levels (9–14 per game). Each level pins all o
 
 - Completing a level earns ★ and unlocks the next one.
 - ★★ and ★★★ require finishing faster and with fewer mistakes. Each level shows its exact star targets before you start.
-- For Target, stars come from the round score: 1,000 × min(hits ÷ required hits, 1) × accuracy.
+- For Target, stars count correct taps: ★ needs N taps, ★★ more taps with at most 1 miss, ★★★ the most taps with no misses. A miss is a wrong tap or a target that timed out.
 - **Practice** keeps the free settings under ⚙ Options. Practice rounds are saved but never count toward levels or stars.
 
 Progress is measured as *highest level passed* and *stars earned*. The old 0–1,000 score across mixed settings has been retired. Rounds recorded under the old scoring stay in storage and backups, but they are not charted.
