@@ -10,7 +10,7 @@ Open `index.html` in a modern browser. The project is a **single HTML file**: no
 
 - **Numbers**: find 1–50 in order on a mosaic wheel or triple rings, which may be still or spinning.
 - **Categories**: memorize where items sit (numbers, fruits, animals, tools, flags or words), then find each requested one. This replaces the old separate Memory game.
-- **Pattern**: repeat a drawn unlock pattern, including rotating variants.
+- **Pattern**: repeat a drawn unlock pattern. The 20 levels choose patterns by measured difficulty (turns, crossings, knight moves, jumps over used dots), so high levels never get an easy one by chance. Higher levels also spin faster, in a random direction or chaotically, trace the preview without step numbers, and at the top ask you to draw it backwards.
 - **Links**: remember the order in which numbers are connected, then reconnect them after they shuffle.
 - **Recall**: reproduce a sequence forward or in reverse (digits, pictures or words).
 - **Target**: find changing targets on one or more rings.
@@ -26,7 +26,7 @@ Every game has a fixed ladder of levels (9–14 per game). Each level pins all o
 
 Progress is measured as *highest level passed* and *stars earned*. The old 0–1,000 score across mixed settings has been retired. Rounds recorded under the old scoring stay in storage and backups, but they are not charted.
 
-The ladders and star thresholds are defined in `LEVEL_LADDERS` inside `index.html`. They are first estimates and should be tuned after real play-testing.
+When a ladder's meaning changes, its version (`LADDER_VERSION`) is raised and older rounds for that game are archived. The ladders and star thresholds are defined in `LEVEL_LADDERS` inside `index.html`. They are first estimates and should be tuned after real play-testing.
 
 ## Profiles and results
 

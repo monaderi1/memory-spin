@@ -2669,6 +2669,11 @@
         min-height: 48px;
       }
       /* ---------- Levels ---------- */
+      #patternBoard .pattern-dot.start .pattern-dot-ring {
+        fill: #5a4a16;
+        stroke: #ffd166;
+        stroke-width: 6;
+      }
       .board-shell[data-mode="category"].number-content .cell text:not(.category-caption) {
         font:
           900 58px Arial,
@@ -3117,6 +3122,7 @@
                   <option value="fast">Spin · Fast</option>
                   <option value="reverse">Spin · Reversing</option>
                   <option value="jump">Spin · 90° Jumps</option>
+                  <option value="chaos">Spin · Chaos</option>
                 </select>
                 <small id="patternSpinDetails"
                   >Classic: the dot grid stays still. Increase the challenge with rotation.</small
@@ -3627,6 +3633,14 @@
       let patternSpin = "still",
         patternAngle = 0,
         patternNextJumpAt = 2500;
+      // Motion state: direction is random per round; "chaos" re-rolls direction and speed at random moments.
+      let patternDir = 1,
+        patternVel = 0,
+        patternNextChangeAt = 0,
+        patternLastT = 0,
+        patternBackward = false,
+        patternExpected = [],
+        patternPreviewCount = 9;
       let linksLength = 3,
         linksSequence = [],
         linksPositions = [],
@@ -3677,6 +3691,7 @@
         fast: "Fast — the full grid rotates once every 9 seconds.",
         reverse: "Reversing — the grid changes direction every 2.5 seconds.",
         jump: "90° Jumps — the grid turns a quarter circle at intervals. It pauses while you draw.",
+        chaos: "Chaos — the grid keeps changing direction and speed at unpredictable moments.",
       };
       const PATTERN_POINTS = Array.from({ length: 9 }, (_, i) => ({
         x: 80 + (i % 3) * 100,
@@ -3699,25 +3714,66 @@
           return (ar + dr / 2) * 3 + ac + dc / 2;
         return -1;
       }
-      function generatePattern(n) {
-        // Each move respects Android's rule about unvisited intermediate dots.
-        for (let attempt = 0; attempt < 100; attempt++) {
-          const path = [Math.floor(Math.random() * 9)];
-          while (path.length < n) {
-            const prev = path[path.length - 1];
-            const options = shuffle(
-              Array.from({ length: 9 }, (_, i) => i).filter(
-                (i) =>
-                  !path.includes(i) &&
-                  (patternBetween(prev, i) < 0 || path.includes(patternBetween(prev, i))),
-              ),
-            );
-            if (!options.length) break;
-            path.push(options[0]);
-          }
-          if (path.length === n) return path;
+      function patternValid(path) {
+        // Android lock rule: jumping over a dot is only allowed if that dot was already used.
+        return path.every((id, i) => {
+          if (!i) return true;
+          const mid = patternBetween(path[i - 1], id);
+          return mid < 0 || path.slice(0, i).includes(mid);
+        });
+      }
+      function randomPatternWalk(n) {
+        const path = [Math.floor(Math.random() * 9)];
+        while (path.length < n) {
+          const prev = path[path.length - 1];
+          const options = Array.from({ length: 9 }, (_, i) => i).filter(
+            (i) =>
+              !path.includes(i) && (patternBetween(prev, i) < 0 || path.includes(patternBetween(prev, i))),
+          );
+          if (!options.length) return null;
+          path.push(options[Math.floor(Math.random() * options.length)]);
         }
-        return Array.from({ length: n }, (_, i) => i);
+        return path;
+      }
+      function segmentsCross(a, b, c, d) {
+        const o = (p, q, r) => Math.sign((q.c - p.c) * (r.r - p.r) - (q.r - p.r) * (r.c - p.c));
+        return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0;
+      }
+      // Higher = harder to remember: turns, knight moves, jumps over used dots and self-crossings.
+      function patternComplexity(path) {
+        const P = path.map((i) => ({ r: Math.floor(i / 3), c: i % 3 }));
+        let turns = 0,
+          knight = 0,
+          over = 0,
+          cross = 0;
+        for (let i = 1; i < P.length; i++) {
+          const dr = P[i].r - P[i - 1].r,
+            dc = P[i].c - P[i - 1].c;
+          if (Math.abs(dr) + Math.abs(dc) === 3) knight++;
+          if (patternBetween(path[i - 1], path[i]) >= 0) over++;
+          if (i > 1) {
+            const pr = P[i - 1].r - P[i - 2].r,
+              pc = P[i - 1].c - P[i - 2].c;
+            if (pr * dc - pc * dr !== 0) turns++;
+          }
+        }
+        for (let i = 1; i < P.length; i++)
+          for (let j = i + 2; j < P.length; j++) if (segmentsCross(P[i - 1], P[i], P[j - 1], P[j])) cross++;
+        return turns + 1.5 * knight + 1.2 * over + 2 * cross;
+      }
+      // Generates many valid patterns and picks one at the requested difficulty quantile (0 = easiest,
+      // 1 = hardest), so high levels never get a trivial straight-line pattern by chance.
+      function generatePattern(n, hard = 0.5, reversible = false) {
+        const pool = [];
+        for (let attempt = 0; attempt < 400 && pool.length < 160; attempt++) {
+          const path = randomPatternWalk(n);
+          if (!path || (reversible && !patternValid([...path].reverse()))) continue;
+          pool.push({ path, score: patternComplexity(path) });
+        }
+        if (!pool.length) return Array.from({ length: n }, (_, i) => i);
+        pool.sort((a, b) => a.score - b.score);
+        const q = Math.max(0, Math.min(1, hard + (Math.random() - 0.5) * 0.15));
+        return pool[Math.round(q * (pool.length - 1))].path;
       }
       function patternPathD(indices, tail = null) {
         if (!indices.length) return "";
@@ -3745,7 +3801,10 @@
         const show = state === "preview",
           success = refs.patternBoard.classList.contains("pattern-success"),
           error = refs.patternBoard.classList.contains("pattern-error");
-        refs.patternPreview.setAttribute("d", show ? patternPathD(patternPath) : "");
+        const numbers = !(activeLevel() && activeLevel().noSteps);
+        // Without step numbers the preview is animated: the line is traced segment by segment.
+        const visible = numbers ? patternPath : patternPath.slice(0, patternPreviewCount);
+        refs.patternPreview.setAttribute("d", show ? patternPathD(visible) : "");
         refs.patternLive.setAttribute(
           "d",
           patternPathD(patternSelection, patternPointer !== null ? patternPoint : null),
@@ -3755,11 +3814,22 @@
           const id = Number(dot.dataset.dot),
             step = patternPath.indexOf(id),
             entered = patternSelection.includes(id);
-          dot.classList.toggle("step", show && step >= 0);
+          dot.classList.toggle("step", show && step >= 0 && visible.includes(id));
           dot.classList.toggle("entered", entered && !show);
           dot.classList.toggle("success", entered && success);
           dot.classList.toggle("error", entered && error);
-          dot.lastElementChild.textContent = show && step >= 0 ? String(step + 1) : "";
+          dot.classList.toggle("start", show && !numbers && step === 0);
+          dot.lastElementChild.textContent = show && step >= 0 && numbers ? String(step + 1) : "";
+        }
+      }
+      function animatePatternPreview(ms) {
+        if (mode !== "pattern" || !(activeLevel() && activeLevel().noSteps)) return;
+        const segments = patternPath.length - 1,
+          drawMs = currentPreviewDuration() * 0.65,
+          count = Math.min(patternPath.length, 1 + Math.floor(ms / (drawMs / segments)));
+        if (count !== patternPreviewCount) {
+          patternPreviewCount = count;
+          refreshPattern();
         }
       }
       function clearPatternGesture() {
@@ -3774,8 +3844,16 @@
         clearTimeout(patternClearTimer);
         patternAngle = 0;
         patternNextJumpAt = 2500;
+        patternDir = Math.random() < 0.5 ? -1 : 1;
+        patternVel = 0;
+        patternNextChangeAt = 0;
+        patternLastT = 0;
+        patternPreviewCount = 1;
         refs.patternSpinner.setAttribute("transform", "rotate(0 180 180)");
-        patternPath = generatePattern(patternLength);
+        const level = activeLevel();
+        patternBackward = !!(level && level.backward);
+        patternPath = generatePattern(patternLength, level ? level.hard : 0.5, patternBackward);
+        patternExpected = patternBackward ? [...patternPath].reverse() : [...patternPath];
         clearPatternGesture();
         refreshPattern();
       }
@@ -3791,28 +3869,40 @@
           dy = p.y - 180;
         return { x: 180 + dx * c + dy * s, y: 180 - dx * s + dy * c };
       }
+      function patternPeriod() {
+        const level = activeLevel();
+        return (level && level.period) || { smooth: 22, fast: 9, chaos: 10 }[patternSpin] || 22;
+      }
       function updatePatternMotion(now) {
         if (mode !== "pattern" || state !== "playing") return;
         const t = Math.max(0, now - startedAt),
-          seconds = t / 1000;
-        let angle = 0;
-        if (patternSpin === "smooth") angle = seconds * (360 / 22);
-        else if (patternSpin === "fast") angle = seconds * (360 / 9);
-        else if (patternSpin === "reverse") {
+          dt = Math.max(0, t - patternLastT) / 1000,
+          seconds = t / 1000,
+          speed = 360 / patternPeriod();
+        patternLastT = t;
+        let angle = patternAngle;
+        if (patternSpin === "smooth" || patternSpin === "fast")
+          angle = patternAngle + patternDir * speed * dt;
+        else if (patternSpin === "chaos") {
+          if (t >= patternNextChangeAt) {
+            patternVel = (Math.random() < 0.5 ? -1 : 1) * speed * (0.6 + Math.random() * 0.8);
+            patternNextChangeAt = t + 1200 + Math.random() * 1800;
+          }
+          angle = patternAngle + patternVel * dt;
+        } else if (patternSpin === "reverse") {
           const leg = seconds / 2.5,
             whole = Math.floor(leg),
             fraction = leg - whole;
-          angle = (whole % 2 === 0 ? fraction : 1 - fraction) * 95;
+          angle = patternDir * (whole % 2 === 0 ? fraction : 1 - fraction) * 95;
         } else if (patternSpin === "jump") {
           // Calculate the new angle separately. If patternAngle is updated here,
           // the change detector below stays false and the SVG never rotates.
           if (patternPointer === null && t >= patternNextJumpAt) {
-            angle = (patternAngle + 90) % 360;
+            angle = (patternAngle + 90 * (Math.random() < 0.5 ? -1 : 1) + 360) % 360;
             patternNextJumpAt = t + 2600;
-          } else {
-            angle = patternAngle;
           }
         }
+        angle = ((angle % 360) + 360) % 360;
         const change = Math.abs(patternAngle - angle) > 1e-7;
         patternAngle = angle;
         if (change) {
@@ -3917,8 +4007,8 @@
           return;
         }
         const correct =
-          patternSelection.length === patternPath.length &&
-          patternSelection.every((id, i) => id === patternPath[i]);
+          patternSelection.length === patternExpected.length &&
+          patternSelection.every((id, i) => id === patternExpected[i]);
         if (correct) {
           refs.patternBoard.classList.add("pattern-success");
           refs.found.textContent = "1";
@@ -5188,6 +5278,7 @@
       }
       function frame(now) {
         if (state === "preview") {
+          animatePatternPreview(now - previewAt);
           if (currentPreviewUnlimited()) return;
           let remain = currentPreviewDuration() - (now - previewAt);
           if (remain <= 0) {
@@ -5254,11 +5345,15 @@
           setStatus("Tap the centre target!");
         } else if (mode === "pattern") {
           clearPatternGesture();
-          setStatus(
-            patternSpin === "still"
-              ? "Draw the pattern with one continuous swipe."
-              : "Follow the rotating dots. Draw the original sequence!",
-          );
+          if (patternBackward) {
+            refs.stage.textContent = "Draw it BACKWARDS";
+            setStatus("⟲ Backwards: start at the LAST dot and finish at the first!");
+          } else
+            setStatus(
+              patternSpin === "still"
+                ? "Draw the pattern with one continuous swipe."
+                : "Follow the rotating dots. Draw the original sequence!",
+            );
         } else if (mode === "links") {
           reshuffleLinks();
           setStatus("Numbers shuffled! Connect them in the remembered order.");
@@ -6404,27 +6499,34 @@
           m3: 0,
           m2: Math.ceil(l.count / 4),
         })),
+        // Pattern v2: difficulty-selected patterns (hard = quantile), faster/chaotic spin, hidden step
+        // numbers (start dot marked only) and "draw it backwards" at the top.
         pattern: [
-          [4, "still"],
-          [5, "still"],
-          [6, "still"],
-          [5, "smooth"],
-          [6, "smooth"],
-          [7, "still"],
-          [6, "fast"],
-          [7, "smooth"],
-          [6, "reverse"],
-          [7, "fast"],
-          [6, "jump"],
-          [8, "reverse"],
-          [8, "jump"],
-          [9, "fast"],
-        ].map(([length, spin]) => ({
-          length,
-          spin,
-          time: 20,
-          t3: Math.round(2 + 0.6 * length),
-          t2: Math.round(4 + 1.1 * length),
+          { length: 4, spin: "still", hard: 0.3 },
+          { length: 5, spin: "still", hard: 0.4 },
+          { length: 6, spin: "still", hard: 0.5 },
+          { length: 5, spin: "smooth", period: 20, hard: 0.5 },
+          { length: 6, spin: "still", hard: 0.6, noSteps: true },
+          { length: 6, spin: "smooth", period: 16, hard: 0.6, noSteps: true },
+          { length: 7, spin: "still", hard: 0.7, noSteps: true },
+          { length: 6, spin: "fast", period: 10, hard: 0.65, noSteps: true },
+          { length: 7, spin: "smooth", period: 13, hard: 0.7, noSteps: true },
+          { length: 6, spin: "reverse", hard: 0.75, noSteps: true },
+          { length: 6, spin: "still", hard: 0.6, noSteps: true, backward: true },
+          { length: 7, spin: "fast", period: 8, hard: 0.75, noSteps: true },
+          { length: 7, spin: "jump", hard: 0.8, noSteps: true },
+          { length: 7, spin: "chaos", period: 10, hard: 0.8, noSteps: true },
+          { length: 7, spin: "smooth", period: 12, hard: 0.75, noSteps: true, backward: true },
+          { length: 8, spin: "fast", period: 7, hard: 0.85, noSteps: true },
+          { length: 8, spin: "chaos", period: 8, hard: 0.85, noSteps: true },
+          { length: 8, spin: "fast", period: 7, hard: 0.85, noSteps: true, backward: true },
+          { length: 9, spin: "chaos", period: 7, hard: 0.9, noSteps: true, preview: 4 },
+          { length: 9, spin: "chaos", period: 6, hard: 0.95, noSteps: true, backward: true, preview: 4 },
+        ].map((l) => ({
+          ...l,
+          time: l.backward ? 25 : 20,
+          t3: Math.round(2 + 0.6 * l.length + (l.backward ? 2 : 0)),
+          t2: Math.round(4 + 1.1 * l.length + (l.backward ? 3 : 0)),
         })),
         links: [
           [3, 4],
@@ -6491,12 +6593,18 @@
         })),
       };
       const LEVEL_GAMES = ["focus", "category", "pattern", "links", "digits", "speed"];
+      // Bump a game's version whenever its ladder changes meaning; older rounds are then archived.
+      const LADDER_VERSION = { pattern: 2 };
+      function ladderVersion(game) {
+        return LADDER_VERSION[game] || 1;
+      }
       const PATTERN_SPIN_SHORT = {
         still: "still",
         smooth: "slow spin",
         fast: "fast spin",
         reverse: "reversing",
         jump: "90° jumps",
+        chaos: "chaos spin",
       };
       const KIND_LABELS = {
         number: "digits",
@@ -6512,7 +6620,9 @@
         return LEVEL_LADDERS[game] || [];
       }
       function levelRounds(game) {
-        return activeRounds().filter((r) => r.schema === 2 && !r.practice && r.game === game);
+        return activeRounds().filter(
+          (r) => r.schema === 2 && !r.practice && r.game === game && (r.lv || 1) === ladderVersion(game),
+        );
       }
       function bestStarsByLevel(game) {
         const best = new Map();
@@ -6545,7 +6655,15 @@
           return `${L.layout === "rings" ? "Triple rings" : "Mosaic"} · ${L.spin ? "spinning" : "still"} · ${Number.isFinite(L.time) ? L.time + "s limit" : "no limit"}`;
         if (game === "category")
           return `${L.count} ${CATEGORY_SETS[L.set].label.toLowerCase()} · ${L.preview}s to look · ${L.spin ? "spinning" : "still"}`;
-        if (game === "pattern") return `${L.length} dots · ${PATTERN_SPIN_SHORT[L.spin]}`;
+        if (game === "pattern")
+          return [
+            `${L.length} dots`,
+            L.period && L.spin !== "chaos" ? `spin ${L.period}s/turn` : PATTERN_SPIN_SHORT[L.spin],
+            L.noSteps ? "no numbers" : "",
+            L.backward ? "⟲ backwards" : "",
+          ]
+            .filter(Boolean)
+            .join(" · ");
         if (game === "links") return `${L.length} links · ${L.preview}s to look`;
         if (game === "digits") return `${L.length} ${KIND_LABELS[L.kind]} · ${L.preview}s to look`;
         if (game === "speed")
@@ -6569,7 +6687,11 @@
             `…in ≤ ${L.t3}s with ${L.m3 ? "≤ " + L.m3 : "no"} mistake${L.m3 === 1 ? "" : "s"}`,
           ];
         }
-        return ["Perfect answer, one attempt", `…in ≤ ${L.t2}s`, `…in ≤ ${L.t3}s`];
+        const first =
+          game === "pattern" && L.backward
+            ? "Perfect, drawn backwards (last dot → first)"
+            : "Perfect answer, one attempt";
+        return [first, `…in ≤ ${L.t2}s`, `…in ≤ ${L.t3}s`];
       }
       function starsFor(game, L, r) {
         if (game === "speed") {
@@ -6588,7 +6710,7 @@
         return t <= L.t3 ? 3 : t <= L.t2 ? 2 : 1;
       }
       function levelFieldsFor(round) {
-        const fields = { schema: 2, game: mode, practice: practiceMode };
+        const fields = { schema: 2, game: mode, practice: practiceMode, lv: ladderVersion(mode) };
         const L = activeLevel();
         if (!practiceMode && L) {
           fields.level = currentLevelNumber();
@@ -7080,11 +7202,13 @@
           div.textContent = "No level rounds yet. Play a level to see your progress here.";
           list.append(div);
         }
-        const archived = all.filter((r) => r.schema !== 2).length;
+        const archived = all.filter(
+          (r) => r.schema !== 2 || (!r.practice && (r.lv || 1) !== ladderVersion(r.game)),
+        ).length;
         if (archived) {
           const note = document.createElement("p");
           note.className = "archive-note";
-          note.textContent = `${archived} round${archived === 1 ? "" : "s"} from the old 0–1,000 scoring are archived: kept in backups, not charted.`;
+          note.textContent = `${archived} older round${archived === 1 ? "" : "s"} (old scoring or a retired level ladder) archived: kept in backups, not charted.`;
           list.append(note);
         }
       }
