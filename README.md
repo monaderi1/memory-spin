@@ -13,7 +13,7 @@ Open `index.html` in a modern browser. The project is a **single HTML file**: no
 - **Pattern**: repeat a drawn unlock pattern. The 20 levels choose patterns by measured difficulty (turns, crossings, knight moves, jumps over used dots), so high levels never get an easy one by chance. Higher levels also spin faster, in a random direction or chaotically, trace the preview without step numbers, and at the top ask you to draw it backwards.
 - **Links**: remember the order in which numbers are connected, then reconnect them after they shuffle.
 - **Recall**: reproduce a sequence forward or in reverse (digits, pictures or words).
-- **Target**: find changing targets on one or more rings.
+- **Target**: find changing targets on one or more rings. Levels use numbers and words only (pictures pop out by colour and shape, so they stay in Practice). Numbers sit in small circles; higher levels randomly colour some circles to distract, independent of the target.
 - **Split**: memorize a number such as 453278. After it hides, a split rule is revealed: plain pairs (45 32 78), each pair flipped (54 23 87) or pairs from the 2nd digit (53 27). Tap the matching pairs among traps, which include the pairs the other rules would give, reversed pairs and near numbers. Higher levels add digits, mix all rules and require the pairs in order.
 
 ## Levels and Practice

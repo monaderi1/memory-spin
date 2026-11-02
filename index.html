@@ -2757,6 +2757,27 @@
         opacity: 0 !important;
         transition: opacity 0.25s ease;
       }
+      .num-badge {
+        fill: #eef3fb;
+        stroke: #c7d3e6;
+        stroke-width: 2;
+        transition: fill 0.25s ease;
+      }
+      .num-badge.noise-a {
+        fill: #ffd166;
+      }
+      .num-badge.noise-b {
+        fill: #ff9fb2;
+      }
+      .num-badge.noise-c {
+        fill: #8fd3ff;
+      }
+      .num-badge.noise-d {
+        fill: #a8f0b8;
+      }
+      .board-shell.speed-layout .cell.speed-hit .num-badge {
+        fill: #8febc0;
+      }
       /* ---------- Board animations ---------- */
       .cell text {
         transform-box: fill-box;
@@ -3278,6 +3299,9 @@
                   <option value="2" selected>2 rings · Medium</option>
                   <option value="3">3 rings · Hard</option>
                 </select>
+                <label class="check-row" for="speedNoiseCheck"
+                  ><input type="checkbox" id="speedNoiseCheck" /> Distracting colours (numbers)</label
+                >
                 <label class="check-row" for="speedRingSpin"
                   ><input type="checkbox" id="speedRingSpin" checked /> Rotate rings (opposite
                   directions)</label
@@ -5370,6 +5394,20 @@
         }
         return rings.map((r, i) => ({ ...r, duration: r.duration * scale, reverse: i % 2 === 1 }));
       }
+      let speedNoise = 0,
+        speedNoiseAt = 0;
+      const NOISE_COLOURS = ["noise-a", "noise-b", "noise-c", "noise-d"];
+      // Colours are random and independent of the target (it is coloured with the same chance as any
+      // other number), so they distract without ever becoming a clue.
+      function rerollSpeedNoise() {
+        for (const g of tiles) {
+          const badge = g.querySelector(".num-badge");
+          if (!badge) continue;
+          badge.classList.remove(...NOISE_COLOURS);
+          if (speedNoise && Math.random() < speedNoise)
+            badge.classList.add(NOISE_COLOURS[Math.floor(Math.random() * NOISE_COLOURS.length)]);
+        }
+      }
       function drawSpeedBoard() {
         const values = shuffle(Array.from({ length: currentItemCount() }, (_, i) => i + 1));
         refs.wheel.replaceChildren();
@@ -5400,6 +5438,20 @@
             wrapper.style.setProperty("--label-spin", cfg.duration + "s");
             const t = svg("text", { x: center.x.toFixed(2), y: center.y.toFixed(2) });
             t.textContent = item.icon;
+            if (speedCategory === "number") {
+              // Each number sits in a small circle sized to its ring; the label scales with it.
+              const arc = (Math.PI * (cfg.inner + cfg.outer)) / cfg.count;
+              const rad = Math.min((cfg.outer - cfg.inner) * 0.48, arc * 0.42, 36);
+              wrapper.append(
+                svg("circle", {
+                  class: "num-badge",
+                  cx: center.x.toFixed(2),
+                  cy: center.y.toFixed(2),
+                  r: rad.toFixed(1),
+                }),
+              );
+              t.style.fontSize = Math.round(rad * 1.08) + "px";
+            }
             wrapper.append(t);
             g.append(wrapper);
             g.addEventListener("click", () => selectSpeedCell(g, key));
@@ -5718,6 +5770,10 @@
         if (Number.isFinite(gameDuration()) && elapsed >= gameDuration()) {
           finish("time");
           return;
+        }
+        if (mode === "speed" && speedNoise && now >= speedNoiseAt) {
+          rerollSpeedNoise();
+          speedNoiseAt = now + 900 + Math.random() * 900;
         }
         if (mode === "speed" && speedTargetKey !== null) {
           const left = Math.max(0, speedWindowMs - (now - speedTargetAt));
@@ -6636,6 +6692,10 @@
         updateLevelUi();
         resetGame();
       });
+      $("speedNoiseCheck").addEventListener("change", (e) => {
+        speedNoise = e.target.checked ? 0.35 : 0;
+        resetGame();
+      });
       refs.coOpMode.addEventListener("change", () => {
         coOpEnabled = refs.coOpMode.checked;
         updateLevelUi();
@@ -7085,22 +7145,23 @@
           t3: Math.round(1.5 + 0.9 * length),
           t2: Math.round(3 + 1.8 * length),
         })),
-        // Speed v2: short rounds early, longer (sustained attention) later. "goal" = hits needed for a
-        // full hit score, set by the pace required (seconds per hit), which tightens with level.
+        // Target v3: numbers and words only. Pictures pop out by colour/shape (search without
+        // reading), so they can never be as hard as numbers and would break the ladder's order;
+        // they stay in Practice. "noise" = share of number circles randomly coloured to distract.
         speed: [
-          ["number", 10, 5, 1, "still", 20, 6],
-          ["number", 10, 5, 2, "still", 20, 7],
-          ["fruit", 6, 5, 1, "still", 20, 7],
-          ["number", 10, 5, 2, "slow", 20, 8],
-          ["animal", 10, 5, 2, "slow", 30, 11],
-          ["number", 10, 5, 3, "still", 30, 12],
-          ["flag", 10, 4, 2, "normal", 30, 12],
-          ["number", 10, 4, 3, "normal", 30, 14],
-          ["word", 10, 4, 2, "normal", 45, 20],
-          ["fruit", 15, 4, 3, "normal", 45, 22],
-          ["number", 10, 3, 3, "fast", 45, 26],
-          ["flag", 15, 3, 3, "fast", 45, 28],
-        ].map(([cat, visible, window, rings, rate, time, goal]) => ({
+          ["number", 10, 5, 1, "still", 20, 6, 0],
+          ["number", 10, 5, 2, "still", 20, 7, 0],
+          ["number", 10, 5, 2, "slow", 20, 7, 0],
+          ["word", 10, 5, 2, "still", 20, 7, 0],
+          ["number", 10, 5, 3, "still", 30, 11, 0],
+          ["number", 10, 4, 2, "normal", 30, 12, 0.2],
+          ["number", 10, 4, 3, "slow", 30, 12, 0.25],
+          ["word", 15, 4, 3, "normal", 30, 12, 0],
+          ["number", 10, 4, 3, "normal", 45, 20, 0.3],
+          ["number", 10, 3, 3, "normal", 45, 22, 0.35],
+          ["number", 10, 3, 3, "fast", 45, 24, 0.35],
+          ["number", 10, 3, 3, "fast", 45, 26, 0.45],
+        ].map(([cat, visible, window, rings, rate, time, goal, noise]) => ({
           cat,
           visible,
           window,
@@ -7108,6 +7169,7 @@
           rate,
           time,
           goal,
+          noise,
           s1: 550,
           s2: 750,
           s3: 900,
@@ -7148,7 +7210,7 @@
       }));
       const LEVEL_GAMES = ["focus", "category", "pattern", "links", "digits", "speed", "split"];
       // Bump a game's version whenever its ladder changes meaning; older rounds are then archived.
-      const LADDER_VERSION = { pattern: 2, speed: 2, split: 2 };
+      const LADDER_VERSION = { pattern: 2, speed: 3, split: 2 };
       function ladderVersion(game) {
         return LADDER_VERSION[game] || 1;
       }
@@ -7238,7 +7300,7 @@
         if (game === "split")
           return `${L.digits} digits · ${L.preview}s to look${L.rules.length > 1 ? " · rule after" : ""}${L.ordered ? " · in order" : ""}`;
         if (game === "speed")
-          return `${L.cat === "number" ? "Numbers" : CATEGORY_SETS[L.cat].label} · ${L.time}s round · ${L.rings} ring${L.rings > 1 ? "s" : ""} · ${L.window}s/target · ${L.rate}`;
+          return `${L.cat === "number" ? "Numbers" : CATEGORY_SETS[L.cat].label}${L.noise ? " · 🎨 colours" : ""} · ${L.time}s round · ${L.rings} ring${L.rings > 1 ? "s" : ""} · ${L.window}s/target · ${L.rate}`;
         return "";
       }
       // Short, scannable goals: the round may be 20 seconds, so reading must take ~3.
@@ -7376,6 +7438,8 @@
           $("speedRingSpin").checked = speedRingSpin;
           speedRingRate = L.rate === "still" ? "normal" : L.rate;
           $("speedRingRate").value = speedRingRate;
+          speedNoise = L.noise || 0;
+          $("speedNoiseCheck").checked = speedNoise > 0;
         }
         updateLevelUi();
         resetGame();
