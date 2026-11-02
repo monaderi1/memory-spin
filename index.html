@@ -2668,6 +2668,64 @@
       #digitBoard.word-recall .picture-study-token {
         min-height: 48px;
       }
+      /* ---------- Board animations ---------- */
+      .cell text {
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+      @keyframes dealIn {
+        from {
+          opacity: 0;
+          transform: translateY(-70px) scale(0.2) rotate(-30deg);
+        }
+        60% {
+          opacity: 1;
+          transform: translateY(5px) scale(1.15);
+        }
+        to {
+          transform: none;
+        }
+      }
+      @keyframes pop {
+        0% {
+          transform: scale(1);
+        }
+        35% {
+          transform: scale(1.75);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-7px);
+        }
+        75% {
+          transform: translateX(7px);
+        }
+      }
+      #wheel.deal .cell text {
+        animation: dealIn 0.55s cubic-bezier(0.2, 0.8, 0.3, 1.2) both;
+        animation-delay: var(--d, 0ms);
+      }
+      .cell text.pop {
+        animation: pop 0.4s ease-out;
+      }
+      .cell text.shake {
+        animation: shake 0.3s ease-in-out;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #wheel.deal .cell text,
+        .cell text.pop,
+        .cell text.shake {
+          animation: none;
+        }
+      }
       /* ---------- Levels ---------- */
       #patternBoard .pattern-dot.start .pattern-dot-ring {
         fill: #5a4a16;
@@ -5164,6 +5222,7 @@
         g.classList.remove("speed-hit", "speed-miss");
         void g.getBoundingClientRect();
         g.classList.add(good ? "speed-hit" : "speed-miss");
+        animateCell(g, good ? "pop" : "shake");
         setTimeout(() => g.classList.remove("speed-hit", "speed-miss"), 250);
         completeSpeedTarget(good, good ? "correct" : "wrong", now);
       }
@@ -5263,12 +5322,14 @@
           tiles.push(g);
         });
       }
+      function isCountdown() {
+        return mode === "speed" || (!!activeLevel() && Number.isFinite(gameDuration()));
+      }
       function formatTime(ms) {
         let duration = gameDuration();
-        let seconds =
-          mode === "speed"
-            ? Math.ceil(Math.max(0, duration - ms) / 1000)
-            : Math.floor(Math.max(0, Number.isFinite(duration) ? Math.min(ms, duration) : ms) / 1000);
+        let seconds = isCountdown()
+          ? Math.ceil(Math.max(0, duration - ms) / 1000)
+          : Math.floor(Math.max(0, Number.isFinite(duration) ? Math.min(ms, duration) : ms) / 1000);
         return (
           String(Math.floor(seconds / 60)).padStart(2, "0") + ":" + String(seconds % 60).padStart(2, "0")
         );
@@ -5370,12 +5431,11 @@
         refs.beginNow.hidden = true;
         refs.timer.classList.remove("preview");
         setTime(0);
-        refs.stage.textContent =
-          mode === "speed"
-            ? "Time remaining"
-            : mode === "focus" && !Number.isFinite(gameDuration())
-              ? "Goal " + (focusLayout === "rings" ? "180" : "120") + "s · no cutoff"
-              : "Time elapsed" + (Number.isFinite(gameDuration()) ? "" : " · No limit");
+        refs.stage.textContent = isCountdown()
+          ? "Time remaining"
+          : mode === "focus" && !Number.isFinite(gameDuration())
+            ? "Goal " + (focusLayout === "rings" ? "180" : "120") + "s · no cutoff"
+            : "Time elapsed" + (Number.isFinite(gameDuration()) ? "" : " · No limit");
         refs.shell.classList.toggle("hidden-items", !["focus", "pattern", "speed", "links"].includes(mode));
         updateHiddenNumbers();
         refs.rotor.classList.toggle("paused", !spinAllowed() || isFocusRings() || mode === "speed");
@@ -5421,6 +5481,25 @@
         $("startButton").textContent = button;
         refs.overlay.hidden = false;
       }
+      // Numbers "drop" into their cells when the board is revealed.
+      function dealBoard(maxDelay = 450) {
+        const texts = refs.wheel.querySelectorAll(".cell text");
+        texts.forEach((t) => t.style.setProperty("--d", Math.round(Math.random() * maxDelay) + "ms"));
+        refs.wheel.classList.remove("deal");
+        void refs.wheel.getBoundingClientRect();
+        refs.wheel.classList.add("deal");
+        clearTimeout(dealBoard.timer);
+        dealBoard.timer = setTimeout(() => refs.wheel.classList.remove("deal"), maxDelay + 700);
+      }
+      // A tapped cell's label briefly grows (correct) or shakes (wrong).
+      function animateCell(g, kind) {
+        const t = g && g.querySelector("text:not(.category-caption)");
+        if (!t) return;
+        t.classList.remove("pop", "shake");
+        void t.getBoundingClientRect();
+        t.classList.add(kind);
+        setTimeout(() => t.classList.remove(kind), 450);
+      }
       function startGame() {
         if (state === "playing" || state === "preview") return;
         if (state === "finished") resetGame();
@@ -5428,9 +5507,11 @@
           state = "preview";
           refs.overlay.hidden = true;
           unlockAudio();
+          dealBoard(250);
           beginPlaying(performance.now());
           return;
         }
+        if (mode === "focus" || mode === "category") dealBoard();
         state = "preview";
         previewAt = performance.now();
         refs.overlay.hidden = true;
@@ -5479,6 +5560,7 @@
           mistakeCount++;
           updateMistakeLabel();
           g.classList.add("wrong");
+          animateCell(g, "shake");
           setTimeout(() => g.classList.remove("wrong"), 400);
           playEffect("wrong");
           if (mode === "focus" && hideWrongNumbers) {
@@ -5499,6 +5581,7 @@
           lastCorrectAt = elapsed;
         }
         g.classList.add("done");
+        animateCell(g, "pop");
         g.classList.remove("eliminated");
         if (mode === "focus") {
           updateHiddenNumbers();
@@ -6645,6 +6728,11 @@
           s3: 900,
         })),
       };
+      // The round limit IS the pass time: the clock enforces the condition instead of letting a round
+      // run past a deadline it has already failed.
+      for (const g of ["focus", "category", "pattern", "links"])
+        for (const L of LEVEL_LADDERS[g]) L.time = L.t2;
+      for (const L of LEVEL_LADDERS.digits) L.answer = L.t2;
       const LEVEL_GAMES = ["focus", "category", "pattern", "links", "digits", "speed"];
       // Bump a game's version whenever its ladder changes meaning; older rounds are then archived.
       const LADDER_VERSION = { pattern: 2, speed: 2 };
