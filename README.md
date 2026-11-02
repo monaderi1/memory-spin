@@ -14,6 +14,7 @@ Open `index.html` in a modern browser. The project is a **single HTML file**: no
 - **Links**: remember the order in which numbers are connected, then reconnect them after they shuffle.
 - **Recall**: reproduce a sequence forward or in reverse (digits, pictures or words).
 - **Target**: find changing targets on one or more rings.
+- **Split**: memorize a number such as 453278, then tap its 2-digit pairs (45, 32, 78) among distractors. Distractors include wrong-split pairs (53, 27), reversed pairs (54) and near numbers (46); higher levels use more of them and ask for the pairs in order.
 
 ## Levels and Practice
 
