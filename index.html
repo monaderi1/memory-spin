@@ -2681,6 +2681,10 @@
         align-items: center;
         gap: clamp(6px, 1.8vw, 12px);
       }
+      .split-prompt {
+        color: #ffd390;
+        font-size: clamp(11px, 3.2vw, 14px);
+      }
       .split-number {
         font:
           850 clamp(30px, 9vw, 46px) / 1.1 Arial,
@@ -3113,10 +3117,11 @@
               <div id="splitStudy" class="split-study" hidden>
                 <span class="digit-small">MEMORIZE THIS NUMBER</span>
                 <div class="split-number" id="splitNumber" dir="ltr"></div>
-                <span class="digit-help">Split it into pairs in your head</span>
+                <span class="digit-help" id="splitRuleNote">Split it into pairs in your head</span>
               </div>
               <div id="splitPlay" class="split-play" hidden>
-                <span class="digit-small" id="splitPrompt">TAP ALL THE PAIRS</span>
+                <span class="digit-small split-prompt" id="splitPrompt">PAIRS</span>
+                <span class="digit-help" id="splitHint"></span>
                 <div class="split-slots" id="splitSlots" dir="ltr"></div>
                 <div class="split-choices" id="splitChoices" dir="ltr"></div>
               </div>
@@ -4763,13 +4768,31 @@
         splitValue = "",
         splitPairs = [],
         splitOptions = [],
-        splitFound = [];
+        splitFound = [],
+        splitRules = ["normal"],
+        splitRule = "normal";
+      // The split rule is revealed only after the number disappears, so pre-chunking while looking
+      // doesn't help: the whole digit sequence must be held. Unused rules' pairs become the best traps.
+      const SPLIT_RULES = {
+        normal: { label: "PAIRS", hint: "453278 → 45 32 78" },
+        flip: { label: "PAIRS, EACH FLIPPED", hint: "453278 → 54 23 87" },
+        shift: { label: "PAIRS FROM THE 2ND DIGIT", hint: "453278 → 53 27" },
+      };
+      function splitPairsFor(value, rule) {
+        if (rule === "shift") return value.slice(1, value.length - 1).match(/../g) || [];
+        const pairs = value.match(/../g) || [];
+        return rule === "flip" ? pairs.map((p) => p[1] + p[0]) : pairs;
+      }
       function splitGenerate() {
-        for (let attempt = 0; attempt < 50; attempt++) {
-          let v = "";
+        let v = "";
+        for (let attempt = 0; attempt < 200; attempt++) {
+          v = "";
           for (let i = 0; i < splitDigits; i++) v += String(1 + Math.floor(Math.random() * 9));
-          const pairs = v.match(/../g);
-          if (new Set(pairs).size === pairs.length) return v;
+          const ok = Object.keys(SPLIT_RULES).every((r) => {
+            const p = splitPairsFor(v, r);
+            return new Set(p).size === p.length;
+          });
+          if (ok) return v;
         }
         return v;
       }
@@ -4777,15 +4800,13 @@
         const real = new Set(splitPairs),
           out = new Set();
         const ok = (c) => /^[1-9][1-9]$/.test(c) && !real.has(c);
-        const boundary = [],
-          reversed = [],
-          near = [];
-        for (let i = 1; i + 1 < splitValue.length; i += 2) boundary.push(splitValue[i] + splitValue[i + 1]);
-        for (const p of splitPairs) {
-          reversed.push(p[1] + p[0]);
-          for (const d of [1, -1, 10, -10]) near.push(String(Number(p) + d));
-        }
-        const confusers = [...shuffle(boundary), ...shuffle(reversed), ...shuffle(near)].filter(ok);
+        // Strongest traps first: pairs the other rules would give, then reversed and near numbers.
+        const otherRules = Object.keys(SPLIT_RULES)
+          .filter((r) => r !== splitRule)
+          .flatMap((r) => splitPairsFor(splitValue, r));
+        const reversed = splitPairs.map((p) => p[1] + p[0]);
+        const near = splitPairs.flatMap((p) => [1, -1, 10, -10].map((d) => String(Number(p) + d)));
+        const confusers = [...shuffle(otherRules), ...shuffle(reversed), ...shuffle(near)].filter(ok);
         const need = splitChoices - splitPairs.length,
           nConfuse = Math.round(need * splitConfuse);
         for (const c of confusers) {
@@ -4801,13 +4822,27 @@
       }
       function splitReset() {
         splitValue = splitGenerate();
-        splitPairs = splitValue.match(/../g);
-        splitOptions = shuffle([...splitPairs, ...splitDistractors()]);
+        splitPairs = [];
+        splitOptions = [];
         splitFound = [];
+        splitRule = "normal";
         $("splitNumber").textContent = splitValue;
+        $("splitRuleNote").textContent =
+          splitRules.length > 1
+            ? "The split rule is revealed after the number hides"
+            : "Split it into pairs in your head";
+        $("splitChoices").replaceChildren();
+        splitRefresh();
+      }
+      // Called when the number hides: pick the rule, then build the answer and the choices.
+      function splitStartRound() {
+        splitRule = splitRules[Math.floor(Math.random() * splitRules.length)];
+        splitPairs = splitPairsFor(splitValue, splitRule);
+        splitOptions = shuffle([...splitPairs, ...splitDistractors()]);
+        refs.total.textContent = " / " + splitPairs.length;
         const grid = $("splitChoices");
         grid.replaceChildren();
-        grid.style.setProperty("--cols", splitOptions.length > 12 ? 4 : splitOptions.length > 6 ? 4 : 3);
+        grid.style.setProperty("--cols", splitOptions.length > 9 ? 4 : 3);
         for (const v of splitOptions) {
           const b = document.createElement("button");
           b.type = "button";
@@ -4822,7 +4857,9 @@
         if (mode !== "split") return;
         $("splitStudy").hidden = state !== "preview";
         $("splitPlay").hidden = state !== "playing" && state !== "finished";
-        $("splitPrompt").textContent = splitOrdered ? "TAP THE PAIRS IN ORDER" : "TAP ALL THE PAIRS";
+        const rule = SPLIT_RULES[splitRule];
+        $("splitPrompt").textContent = rule.label + (splitOrdered ? " · IN ORDER" : "");
+        $("splitHint").textContent = "e.g. " + rule.hint;
         const slots = $("splitSlots");
         slots.replaceChildren();
         splitPairs.forEach((p, i) => {
@@ -5018,7 +5055,7 @@
         if (mode === "speed")
           return `Tap the target shown in the centre.\n${t} · ${speedWindowMs / 1000}s per target · ${speedRingCount} ring${speedRingCount > 1 ? "s" : ""}`;
         if (mode === "split")
-          return `Remember the number, then tap its pairs${splitOrdered ? " IN ORDER" : ""} (e.g. 453278 → 45 32 78).\n${look} · ${t} · ${splitAllowed === Infinity ? "mistakes counted" : splitAllowed ? "≤ " + splitAllowed + " wrong tap" + (splitAllowed === 1 ? "" : "s") : "no wrong taps"}`;
+          return `Remember the number, then tap its pairs${splitOrdered ? " IN ORDER" : ""}.${splitRules.length > 1 ? " The split rule appears after it hides." : ""}\n${look} · ${t} · ${splitAllowed === Infinity ? "mistakes counted" : splitAllowed ? "≤ " + splitAllowed + " wrong tap" + (splitAllowed === 1 ? "" : "s") : "no wrong taps"}`;
         if (mode === "digits")
           return `Remember ${digitLength} ${isPictureRecall() ? recallLabel().toLowerCase() : "digits"}, then enter them forward or backward.\n${look} · ⏱ ${digitAnswerMs === Infinity ? "no limit" : digitAnswerMs / 1000 + "s"}`;
         if (mode === "pattern")
@@ -5090,7 +5127,7 @@
       }
 
       function currentItemCount() {
-        if (mode === "split") return splitDigits / 2;
+        if (mode === "split") return splitPairs.length || splitDigits / 2;
         return mode === "digits"
           ? digitLength
           : mode === "speed"
@@ -5706,8 +5743,11 @@
           reshuffleLinks();
           setStatus("Numbers shuffled! Connect them in the remembered order.");
         } else if (mode === "split") {
-          splitRefresh();
-          setStatus(splitOrdered ? "Tap the pairs in order!" : "Tap all the pairs!");
+          splitStartRound();
+          setStatus(
+            (splitRule === "normal" ? "Tap the pairs" : SPLIT_RULES[splitRule].label.toLowerCase()) +
+              (splitOrdered ? " — in order!" : "!"),
+          );
         } else
           setStatus(
             mode === "focus"
@@ -5997,7 +6037,7 @@
         }
         if (mode === "split") {
           splitRefresh();
-          const answer = `${splitValue} → ${splitPairs.join(" · ")}`;
+          const answer = `${splitValue} → ${splitPairs.join(" · ")} (${SPLIT_RULES[splitRule].label.toLowerCase()})`;
           if (reason === "win") {
             playEffect("win");
             showOverlay("✂️ All pairs found!", answer, "New number");
@@ -7021,24 +7061,26 @@
         for (const L of LEVEL_LADDERS[g]) L.time = L.t2;
       for (const L of LEVEL_LADDERS.digits) L.answer = L.t2;
       LEVEL_LADDERS.split = [
-        // digits, choices, look (s), share of trap distractors, in order, allowed wrong taps, time (s)
-        [4, 6, 4, 0.3, false, 1, 15],
-        [6, 8, 4, 0.4, false, 1, 20],
-        [6, 10, 3, 0.6, false, 1, 20],
-        [8, 10, 4, 0.5, false, 1, 25],
-        [8, 12, 4, 0.7, false, 0, 25],
-        [6, 10, 3, 0.7, true, 0, 20],
-        [10, 12, 5, 0.7, false, 0, 30],
-        [8, 12, 3, 0.8, true, 0, 25],
-        [10, 16, 4, 0.85, false, 0, 30],
-        [12, 16, 5, 0.9, false, 0, 35],
-        [10, 16, 4, 0.9, true, 0, 30],
-        [12, 16, 4, 1, true, 0, 35],
-      ].map(([digits, choices, preview, confuse, ordered, m2, time]) => ({
+        // digits, choices, look (s), trap share, rules (one picked after the number hides), in order,
+        // allowed wrong taps, time (s)
+        [6, 8, 3, 0.7, ["normal"], false, 1, 15],
+        [8, 10, 3, 0.8, ["normal"], false, 1, 20],
+        [6, 10, 4, 0.8, ["normal", "flip"], false, 1, 20],
+        [8, 12, 4, 0.85, ["normal", "flip"], false, 0, 20],
+        [8, 12, 4, 0.85, ["normal", "shift"], false, 0, 20],
+        [8, 12, 4, 0.9, ["normal", "flip", "shift"], false, 0, 25],
+        [10, 12, 4, 0.9, ["normal", "flip"], true, 0, 25],
+        [10, 14, 4, 0.9, ["normal", "flip", "shift"], false, 0, 25],
+        [10, 14, 3, 0.95, ["flip", "shift"], true, 0, 25],
+        [12, 16, 4, 0.95, ["normal", "flip", "shift"], false, 0, 30],
+        [12, 16, 4, 1, ["normal", "flip", "shift"], true, 0, 30],
+        [14, 16, 4, 1, ["normal", "flip", "shift"], true, 0, 30],
+      ].map(([digits, choices, preview, confuse, rules, ordered, m2, time]) => ({
         digits,
         choices,
         preview,
         confuse,
+        rules,
         ordered,
         m2,
         m3: 0,
@@ -7048,7 +7090,7 @@
       }));
       const LEVEL_GAMES = ["focus", "category", "pattern", "links", "digits", "speed", "split"];
       // Bump a game's version whenever its ladder changes meaning; older rounds are then archived.
-      const LADDER_VERSION = { pattern: 2, speed: 2 };
+      const LADDER_VERSION = { pattern: 2, speed: 2, split: 2 };
       function ladderVersion(game) {
         return LADDER_VERSION[game] || 1;
       }
@@ -7129,7 +7171,7 @@
         if (game === "links") return `${L.length} links · ${L.preview}s to look`;
         if (game === "digits") return `${L.length} ${KIND_LABELS[L.kind]} · ${L.preview}s to look`;
         if (game === "split")
-          return `${L.digits} digits · ${L.choices} choices · ${L.preview}s to look${L.ordered ? " · in order" : ""}`;
+          return `${L.digits} digits · ${L.preview}s to look${L.rules.length > 1 ? " · rule after" : ""}${L.ordered ? " · in order" : ""}`;
         if (game === "speed")
           return `${L.cat === "number" ? "Numbers" : CATEGORY_SETS[L.cat].label} · ${L.time}s round · ${L.rings} ring${L.rings > 1 ? "s" : ""} · ${L.window}s/target · ${L.rate}`;
         return "";
@@ -7144,7 +7186,7 @@
         }
         if (game === "focus" || game === "category") return `Finish in ≤ ${L.t2}s · ${mistakes(L.m2)}`;
         if (game === "split")
-          return `All ${L.digits / 2} pairs${L.ordered ? " in order" : ""} · ${L.m2 ? "≤ " + L.m2 + " wrong tap" : "no wrong taps"}`;
+          return `All pairs${L.ordered ? " in order" : ""} · ${L.m2 ? "≤ " + L.m2 + " wrong tap" : "no wrong taps"}`;
         return `${game === "pattern" && L.backward ? "Correct, backwards," : "Correct"} in ≤ ${L.t2}s`;
       }
       function roundOutcomeText(r) {
@@ -7251,6 +7293,7 @@
           $("splitOrderedCheck").checked = L.ordered;
           splitConfuse = L.confuse;
           splitAllowed = L.m2;
+          splitRules = L.rules;
         } else if (game === "speed") {
           speedCategory = L.cat;
           $("speedCategory").value = L.cat;
@@ -7283,7 +7326,8 @@
         $("gameSettings").open = false;
         if (practice) {
           splitAllowed = Infinity;
-          splitConfuse = 0.6;
+          splitConfuse = 0.8;
+          splitRules = ["normal", "flip", "shift"];
           updateLevelUi();
           resetGame();
           updateLevelBar();
