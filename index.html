@@ -2786,6 +2786,29 @@
         fill: transparent;
         stroke: none;
       }
+      .num-badge {
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+      @keyframes badgePulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        40% {
+          transform: scale(1.45);
+        }
+      }
+      .cell.pulse .num-badge,
+      .cell.pulse text {
+        animation: badgePulse 0.6s ease-in-out;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .cell.pulse .num-badge,
+        .cell.pulse text {
+          animation: none;
+        }
+      }
       .board-shell.speed-numbers .ring-sep {
         display: none;
       }
@@ -5410,7 +5433,8 @@
         return rings.map((r, i) => ({ ...r, duration: r.duration * scale, reverse: i % 2 === 1 }));
       }
       let speedNoise = 0,
-        speedNoiseAt = 0;
+        speedNoiseAt = 0,
+        speedPulseAt = 0;
       const NOISE_COLOURS = ["noise-a", "noise-b", "noise-c", "noise-d"];
       // Colours are random and independent of the target (it is coloured with the same chance as any
       // other number), so they distract without ever becoming a clue.
@@ -5422,6 +5446,22 @@
           if (speedNoise && Math.random() < speedNoise)
             badge.classList.add(NOISE_COLOURS[Math.floor(Math.random() * NOISE_COLOURS.length)]);
         }
+      }
+      // Hardest levels: a few random circles briefly swell. Like the colours, chosen without regard to
+      // the target, so a pulse never points at the answer.
+      function pulseSpeedCircles() {
+        const pool = tiles.filter((g) => g.querySelector(".num-badge"));
+        const n = Math.min(pool.length, 1 + Math.floor(Math.random() * 3));
+        for (const g of shuffle([...pool]).slice(0, n)) {
+          g.classList.remove("pulse");
+          void g.getBoundingClientRect();
+          g.classList.add("pulse");
+          setTimeout(() => g.classList.remove("pulse"), 650);
+        }
+      }
+      function speedPulseOn() {
+        const level = activeLevel();
+        return mode === "speed" && (level ? level.noise >= 0.35 : speedNoise > 0);
       }
       function drawSpeedBoard() {
         const values = shuffle(Array.from({ length: currentItemCount() }, (_, i) => i + 1));
@@ -5465,7 +5505,7 @@
                   r: rad.toFixed(1),
                 }),
               );
-              t.style.fontSize = Math.round(rad * 1.08) + "px";
+              t.style.fontSize = Math.round(rad * 0.92) + "px";
             }
             wrapper.append(t);
             g.append(wrapper);
@@ -5786,6 +5826,10 @@
         if (Number.isFinite(gameDuration()) && elapsed >= gameDuration()) {
           finish("time");
           return;
+        }
+        if (state === "playing" && speedPulseOn() && now >= speedPulseAt) {
+          pulseSpeedCircles();
+          speedPulseAt = now + 700 + Math.random() * 900;
         }
         if (mode === "speed" && speedNoise && now >= speedNoiseAt) {
           rerollSpeedNoise();
