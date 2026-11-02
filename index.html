@@ -2749,6 +2749,14 @@
       .split-choice:disabled:not(.found):not(.miss) {
         opacity: 0.55;
       }
+      .cell.cleared path {
+        fill: #22324a;
+        transition: fill 0.3s ease;
+      }
+      .cell.cleared text {
+        opacity: 0 !important;
+        transition: opacity 0.25s ease;
+      }
       /* ---------- Board animations ---------- */
       .cell text {
         transform-box: fill-box;
@@ -3228,6 +3236,12 @@
                 </select>
                 <label class="check-row" for="hideWrongNumber"
                   ><input id="hideWrongNumber" type="checkbox" /> Hide a number after a wrong tap</label
+                >
+                <label class="check-row" for="focusClearCheck"
+                  ><input id="focusClearCheck" type="checkbox" /> Clear numbers once found</label
+                >
+                <label class="check-row" for="focusReverseCheck"
+                  ><input id="focusReverseCheck" type="checkbox" /> Reverse: shown 15 → tap 51</label
                 >
                 <label class="check-row" for="coOpMode"
                   ><input id="coOpMode" type="checkbox" /> Co-op Mode · You &amp; System alternate</label
@@ -4430,8 +4444,18 @@
         if (mode === "links") refreshLinks();
       }
 
+      // Numbers variants. focusClear: found numbers vanish (training wheels for early levels).
+      // focusReverse: the target is shown as e.g. 15 and the player taps 51. Bases 12–59 without
+      // multiples of 10 (no "01") and doubles (11 → 11 is no task): 40 numbers, and both 13 and 31
+      // are on the board, so tapping the shown number is a natural trap.
+      let focusClear = false,
+        focusReverse = false;
+      const FOCUS_REV_BASE = Array.from({ length: 48 }, (_, i) => i + 12).filter(
+        (n) => n % 10 !== 0 && n % 11 !== 0,
+      );
+      const reverseNumber = (n) => Number(String(n).split("").reverse().join(""));
       function isCoop() {
-        return mode === "focus" && coOpEnabled;
+        return mode === "focus" && coOpEnabled && !focusReverse;
       }
       function stopCoopTurn() {
         clearTimeout(coopTimer);
@@ -4455,7 +4479,9 @@
                       ? "Find target"
                       : mode === "split"
                         ? "Pairs"
-                        : "Find number";
+                        : mode === "focus" && focusReverse
+                          ? "Reverse of"
+                          : "Find number";
           return;
         }
         const systemTurn = state === "playing" && coopPending;
@@ -5064,6 +5090,8 @@
           return `Remember the number order. They shuffle — connect the same order.\n${look} · ${t} · one attempt`;
         if (mode === "category")
           return `Remember where the ${currentCategoryLabel().toLowerCase()} are, then find each one.\n${look} · ${t}`;
+        if (focusReverse)
+          return `Tap the REVERSE of each shown number: 15 → tap 51.\n${look} · ${t}${spinAllowed() ? " · spinning" : ""}`;
         return `Tap 1 → 50 in order.\n${look} · ${t}${spinAllowed() ? " · spinning" : ""}`;
       }
       function introText() {
@@ -5127,6 +5155,7 @@
       }
 
       function currentItemCount() {
+        if (mode === "focus" && focusReverse) return FOCUS_REV_BASE.length;
         if (mode === "split") return splitPairs.length || splitDigits / 2;
         return mode === "digits"
           ? digitLength
@@ -5197,7 +5226,7 @@
         return (CATEGORY_SETS[categorySet] || CATEGORY_SETS.fruit).noun;
       }
       function isFocusRings() {
-        return mode === "focus" && focusLayout === "rings";
+        return mode === "focus" && focusLayout === "rings" && !focusReverse;
       }
       function shuffle(a) {
         for (let i = a.length - 1; i > 0; i--) {
@@ -5272,6 +5301,10 @@
       }
       function contentFor(key) {
         if (mode === "category") return currentCategoryItems()[key - 1];
+        if (mode === "focus" && focusReverse) {
+          const label = reverseNumber(FOCUS_REV_BASE[key - 1]);
+          return { icon: String(label), name: "Number " + label };
+        }
         return { icon: String(key), name: "Number " + key };
       }
       function itemKeys() {
@@ -5653,6 +5686,10 @@
           refs.next.textContent = "✓";
           return;
         }
+        if (mode === "focus" && focusReverse) {
+          refs.next.textContent = String(FOCUS_REV_BASE[k - 1]);
+          return;
+        }
         let item = contentFor(k);
         refs.next.textContent =
           mode === "category"
@@ -5860,7 +5897,7 @@
         if (mode === "focus") {
           const seconds = (elapsed - lastCorrectAt) / 1000;
           numberTimings.push({
-            number: key,
+            number: focusReverse ? FOCUS_REV_BASE[key - 1] : key,
             seconds,
             elapsed: elapsed / 1000,
             actor: isCoop() ? actor : "user",
@@ -5869,6 +5906,7 @@
         }
         g.classList.add("done");
         animateCell(g, "pop");
+        if (mode === "focus" && focusClear) setTimeout(() => g.classList.add("cleared"), 380);
         g.classList.remove("eliminated");
         if (mode === "focus") {
           updateHiddenNumbers();
@@ -6297,7 +6335,9 @@
                     ? "Lock"
                     : mode === "category"
                       ? "Find item"
-                      : "Find number";
+                      : mode === "focus" && focusReverse
+                        ? "Reverse of"
+                        : "Find number";
         refs.next.classList.toggle(
           "target-word",
           ["category", "pattern", "links", "digits", "speed", "split"].includes(mode),
@@ -6587,6 +6627,15 @@
         updateLevelUi();
         resetGame();
       });
+      $("focusClearCheck").addEventListener("change", (e) => {
+        focusClear = e.target.checked;
+        resetGame();
+      });
+      $("focusReverseCheck").addEventListener("change", (e) => {
+        focusReverse = e.target.checked;
+        updateLevelUi();
+        resetGame();
+      });
       refs.coOpMode.addEventListener("change", () => {
         coOpEnabled = refs.coOpMode.checked;
         updateLevelUi();
@@ -6791,7 +6840,8 @@
             (isCoop() ? "Co-op · " : "") +
             LEVELS[focusLevel].name +
             " · " +
-            (focusLayout === "rings" ? "Triple Rings" : "Mosaic")
+            (focusReverse ? "Reverse" : focusLayout === "rings" ? "Triple Rings" : "Mosaic") +
+            (focusClear ? " · found clear" : "")
           );
         if (mode === "pattern")
           return `${patternLength} dots · ${PATTERN_SPIN_INFO[patternSpin].split(" — ")[0]}`;
@@ -6927,16 +6977,24 @@
       // simply "highest level passed" plus stars. Thresholds are first guesses: tune after play-testing.
       const LEVEL_LADDERS = {
         focus: [
-          { spin: false, layout: "mosaic", time: Infinity, t3: 120, t2: 200, m3: 2, m2: 6 },
-          { spin: false, layout: "mosaic", time: 180, t3: 110, t2: 150, m3: 2, m2: 5 },
-          { spin: true, spinSpeed: 1, layout: "mosaic", time: 180, t3: 120, t2: 160, m3: 2, m2: 5 },
-          { spin: true, spinSpeed: 2, layout: "mosaic", time: 150, t3: 110, t2: 135, m3: 2, m2: 5 },
-          { spin: false, layout: "rings", time: 180, t3: 120, t2: 160, m3: 2, m2: 5 },
-          { spin: true, spinSpeed: 3, layout: "mosaic", time: 150, t3: 110, t2: 135, m3: 2, m2: 4 },
-          { spin: true, layout: "rings", time: 180, t3: 130, t2: 165, m3: 2, m2: 5 },
-          { spin: true, spinSpeed: 2, layout: "mosaic", time: 120, t3: 90, t2: 105, m3: 1, m2: 4 },
-          { spin: true, layout: "rings", time: 150, t3: 110, t2: 135, m3: 1, m2: 4 },
-          { spin: true, spinSpeed: 3, layout: "mosaic", time: 100, t3: 75, t2: 90, m3: 1, m2: 3 },
+          // 1–3: found numbers are cleared (fewer to search) instead of extra time.
+          { spin: false, layout: "mosaic", clear: true, t3: 100, t2: 150, m3: 2, m2: 6 },
+          { spin: false, layout: "mosaic", clear: true, t3: 90, t2: 120, m3: 2, m2: 5 },
+          { spin: true, spinSpeed: 1, layout: "mosaic", clear: true, t3: 100, t2: 130, m3: 2, m2: 5 },
+          { spin: true, spinSpeed: 2, layout: "mosaic", t3: 110, t2: 135, m3: 2, m2: 5 },
+          { spin: false, layout: "rings", t3: 120, t2: 160, m3: 2, m2: 5 },
+          { spin: true, spinSpeed: 3, layout: "mosaic", t3: 110, t2: 135, m3: 2, m2: 4 },
+          { spin: true, layout: "rings", t3: 130, t2: 165, m3: 2, m2: 5 },
+          { spin: true, spinSpeed: 2, layout: "mosaic", t3: 90, t2: 105, m3: 1, m2: 4 },
+          { spin: true, layout: "rings", t3: 110, t2: 135, m3: 1, m2: 4 },
+          { spin: true, spinSpeed: 3, layout: "mosaic", t3: 75, t2: 90, m3: 1, m2: 3 },
+          // 11–16: reverse — see 15, tap 51 (40 numbers, mosaic only).
+          { reverse: true, spin: false, layout: "mosaic", clear: true, t3: 100, t2: 150, m3: 2, m2: 6 },
+          { reverse: true, spin: false, layout: "mosaic", t3: 100, t2: 150, m3: 2, m2: 5 },
+          { reverse: true, spin: true, spinSpeed: 1, layout: "mosaic", t3: 100, t2: 150, m3: 2, m2: 5 },
+          { reverse: true, spin: true, spinSpeed: 2, layout: "mosaic", t3: 90, t2: 130, m3: 1, m2: 4 },
+          { reverse: true, spin: true, spinSpeed: 3, layout: "mosaic", t3: 85, t2: 120, m3: 1, m2: 3 },
+          { reverse: true, spin: true, spinSpeed: 3, layout: "mosaic", t3: 75, t2: 110, m3: 0, m2: 2 },
         ],
         category: [
           { set: "number", count: 3, preview: 5, spin: false, time: 20 },
@@ -7156,7 +7214,14 @@
       }
       function levelSummary(game, L) {
         if (game === "focus")
-          return `${L.layout === "rings" ? "Triple rings" : "Mosaic"} · ${L.spin ? "spinning" : "still"} · ${Number.isFinite(L.time) ? L.time + "s limit" : "no limit"}`;
+          return [
+            L.reverse ? "⇄ Reverse 15→51" : L.layout === "rings" ? "Triple rings" : "Mosaic",
+            L.spin ? "spinning" : "still",
+            L.clear ? "found clear" : "",
+            `${L.time}s`,
+          ]
+            .filter(Boolean)
+            .join(" · ");
         if (game === "category")
           return `${L.count} ${CATEGORY_SETS[L.set].label.toLowerCase()} · ${L.preview}s to look · ${L.spin ? "spinning" : "still"}`;
         if (game === "pattern")
@@ -7257,6 +7322,10 @@
           refs.hideWrongNumber.checked = false;
           coOpEnabled = false;
           refs.coOpMode.checked = false;
+          focusClear = !!L.clear;
+          $("focusClearCheck").checked = focusClear;
+          focusReverse = !!L.reverse;
+          $("focusReverseCheck").checked = focusReverse;
           setSpinSpeed(L.spinSpeed || 2);
         } else if (game === "category") {
           categorySet = L.set;
