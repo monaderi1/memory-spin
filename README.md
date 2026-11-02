@@ -8,7 +8,7 @@ Open `index.html` in a modern browser. The project is a **single HTML file**: no
 
 ## Games
 
-- **Numbers**: find 1–50 in order on a mosaic wheel or triple rings, which may be still or spinning.
+- **Numbers**: find 1–50 in order on a mosaic wheel or triple rings, which may be still or spinning. In levels 1–3 found numbers are cleared from the board. Levels 11–16 are **Reverse**: the target shows e.g. 15 and you tap 51 (40 numbers from 12–59, without multiples of 10 or doubles; both 13 and 31 are on the board).
 - **Categories**: memorize where items sit (numbers, fruits, animals, tools, flags or words), then find each requested one. This replaces the old separate Memory game.
 - **Pattern**: repeat a drawn unlock pattern. The 20 levels choose patterns by measured difficulty (turns, crossings, knight moves, jumps over used dots), so high levels never get an easy one by chance. Higher levels also spin faster, in a random direction or chaotically, trace the preview without step numbers, and at the top ask you to draw it backwards.
 - **Links**: remember the order in which numbers are connected, then reconnect them after they shuffle.
