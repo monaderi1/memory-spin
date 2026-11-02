@@ -2778,6 +2778,21 @@
       .board-shell.speed-layout .cell.speed-hit .num-badge {
         fill: #8febc0;
       }
+      .board-shell.speed-layout .cell.speed-miss .num-badge {
+        fill: #ff9d95;
+      }
+      /* Numbers in Target: only the circles are drawn. The wedge stays as an invisible tap area. */
+      .board-shell.speed-numbers .cell path {
+        fill: transparent;
+        stroke: none;
+      }
+      .board-shell.speed-numbers .ring-sep {
+        display: none;
+      }
+      .board-shell.speed-numbers .cell.speed-hit path,
+      .board-shell.speed-numbers .cell.speed-miss path {
+        fill: transparent;
+      }
       /* ---------- Board animations ---------- */
       .cell text {
         transform-box: fill-box;
@@ -5466,6 +5481,7 @@
           }
           ring.append(
             svg("circle", {
+              class: "ring-sep",
               r: cfg.inner,
               cx: 0,
               cy: 0,
@@ -6280,6 +6296,7 @@
         refs.shell.classList.toggle("ring-layout", isFocusRings());
         refs.shell.classList.toggle("speed-layout", mode === "speed");
         refs.shell.classList.toggle("speed-picture", mode === "speed" && speedCategory !== "number");
+        refs.shell.classList.toggle("speed-numbers", mode === "speed" && speedCategory === "number");
         refs.shell.classList.toggle(
           "word-content",
           (mode === "category" && categorySet === "word") || (mode === "speed" && speedCategory === "word"),
