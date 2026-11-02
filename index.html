@@ -2057,7 +2057,7 @@
 
       /* Speed Target: mobile-sized selectable annular cells, fixed centre target */
       #playScreen .mode-switch {
-        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-template-columns: repeat(7, minmax(0, 1fr));
       }
       /* Number Links: only the values and their connection order matter, not screen positions. */
       .board-shell[data-mode="links"] .board-rotor {
@@ -2320,6 +2320,7 @@
       .board-shell[data-mode="digits"] .board-rotor {
         display: none;
       }
+      #splitBoard,
       #digitBoard {
         position: absolute;
         inset: 0;
@@ -2668,6 +2669,82 @@
       #digitBoard.word-recall .picture-study-token {
         min-height: 48px;
       }
+      /* ---------- Split ---------- */
+      .board-shell[data-mode="split"] .board-rotor {
+        display: none;
+      }
+      .split-study,
+      .split-play {
+        width: 82%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: clamp(6px, 1.8vw, 12px);
+      }
+      .split-number {
+        font:
+          850 clamp(30px, 9vw, 46px) / 1.1 Arial,
+          sans-serif;
+        letter-spacing: 3px;
+        color: #92f4d5;
+        font-variant-numeric: tabular-nums;
+      }
+      .split-slots {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .split-slot {
+        min-width: 34px;
+        padding: 3px 4px;
+        border-radius: 7px;
+        background: #29425e;
+        color: #8fa8c4;
+        font:
+          800 15px Arial,
+          sans-serif;
+        text-align: center;
+      }
+      .split-slot.filled {
+        background: #2c6a55;
+        color: #eafff4;
+      }
+      .split-choices {
+        display: grid;
+        grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
+        gap: 6px;
+        width: min(100%, 270px);
+      }
+      .split-choice {
+        min-height: clamp(36px, 10vw, 46px);
+        border: 1px solid #ffffff35;
+        border-radius: 10px;
+        background: #284563;
+        color: #f6fbff;
+        font:
+          850 clamp(17px, 5vw, 22px) / 1 Arial,
+          sans-serif;
+        font-variant-numeric: tabular-nums;
+        touch-action: manipulation;
+      }
+      .split-choice.found {
+        background: #2c7050;
+        border-color: #9ef1ba;
+        animation: pop 0.4s ease-out;
+      }
+      .split-choice.miss {
+        background: #5a2a33;
+        border-color: #ff959a;
+        opacity: 0.6;
+        animation: shake 0.3s ease-in-out;
+      }
+      .split-choice.shake-btn {
+        animation: shake 0.3s ease-in-out;
+      }
+      .split-choice:disabled:not(.found):not(.miss) {
+        opacity: 0.55;
+      }
       /* ---------- Board animations ---------- */
       .cell text {
         transform-box: fill-box;
@@ -2950,6 +3027,9 @@
           <button class="mode-choice" id="speedMode" aria-pressed="false" type="button">
             <span class="mode-icon" aria-hidden="true">🎯</span><span class="mode-title">Target</span>
           </button>
+          <button class="mode-choice" id="splitMode" aria-pressed="false" type="button">
+            <span class="mode-icon" aria-hidden="true">✂️</span><span class="mode-title">Split</span>
+          </button>
         </div>
         <div class="level-bar" id="levelBar">
           <button class="level-pick" id="levelPickButton" type="button" aria-haspopup="dialog">
@@ -3029,6 +3109,18 @@
               <path id="linksLiveLine" />
               <g id="linksDots"></g>
             </svg>
+            <div id="splitBoard" hidden aria-label="Split the number into pairs">
+              <div id="splitStudy" class="split-study" hidden>
+                <span class="digit-small">MEMORIZE THIS NUMBER</span>
+                <div class="split-number" id="splitNumber" dir="ltr"></div>
+                <span class="digit-help">Split it into pairs in your head</span>
+              </div>
+              <div id="splitPlay" class="split-play" hidden>
+                <span class="digit-small" id="splitPrompt">TAP ALL THE PAIRS</span>
+                <div class="split-slots" id="splitSlots" dir="ltr"></div>
+                <div class="split-choices" id="splitChoices" dir="ltr"></div>
+              </div>
+            </div>
             <div id="digitBoard" hidden aria-label="Sequence recall game">
               <div id="digitStudy" class="digit-study" hidden>
                 <span class="digit-small" id="digitStudyTitle">MEMORIZE THIS NUMBER</span>
@@ -3222,6 +3314,27 @@
                   original order with one finger swipe. One attempt, 20 seconds.</small
                 >
               </section>
+              <section class="level-panel" id="splitPanel" aria-label="Split settings" hidden>
+                <label for="splitDigitsSelect">Digits</label>
+                <select id="splitDigitsSelect">
+                  <option value="4">4 digits · 2 pairs</option>
+                  <option value="6" selected>6 digits · 3 pairs</option>
+                  <option value="8">8 digits · 4 pairs</option>
+                  <option value="10">10 digits · 5 pairs</option>
+                  <option value="12">12 digits · 6 pairs</option>
+                </select>
+                <label for="splitChoicesSelect">Choices</label>
+                <select id="splitChoicesSelect">
+                  <option value="6">6</option>
+                  <option value="8">8</option>
+                  <option value="10" selected>10</option>
+                  <option value="12">12</option>
+                  <option value="16">16</option>
+                </select>
+                <label class="check-row" for="splitOrderedCheck"
+                  ><input id="splitOrderedCheck" type="checkbox" /> Tap the pairs in order</label
+                >
+              </section>
               <section class="level-panel" id="digitPanel" aria-label="Sequence Recall settings" hidden>
                 <label for="digitKind">Recall type</label>
                 <select id="digitKind" aria-label="Recall type">
@@ -3375,6 +3488,7 @@
               <option value="links">🔗 Links</option>
               <option value="digits">🔟 Recall</option>
               <option value="speed">🎯 Target</option>
+              <option value="split">✂️ Split</option>
             </select></label
           >
           <label
@@ -3572,6 +3686,11 @@
           duration: 30000,
           intro:
             "Remember a random number. After it disappears, enter its digits from left to right or right to left, whichever the game requests.",
+        },
+        split: {
+          count: 3,
+          duration: 30000,
+          intro: "Memorize the number. Then tap its 2-digit pairs among the choices.",
         },
         speed: {
           count: 22,
@@ -4329,7 +4448,9 @@
                     ? "Recall"
                     : mode === "speed"
                       ? "Find target"
-                      : "Find number";
+                      : mode === "split"
+                        ? "Pairs"
+                        : "Find number";
           return;
         }
         const systemTurn = state === "playing" && coopPending;
@@ -4631,12 +4752,124 @@
           ? pictureResponse.map((i) => recallPool()[i].icon).join(" → ")
           : digitResponse;
       }
+      // ------- Split: remember an even-length number, then tap its 2-digit pairs -------
+      // The difficulty lives in the distractors: wrong-split pairs (digits that were adjacent across a
+      // pair boundary), reversed pairs and near numbers. Digits are 1–9 only: a 0 would give fakes away.
+      let splitDigits = 6,
+        splitChoices = 10,
+        splitOrdered = false,
+        splitConfuse = 0.6,
+        splitAllowed = Infinity,
+        splitValue = "",
+        splitPairs = [],
+        splitOptions = [],
+        splitFound = [];
+      function splitGenerate() {
+        for (let attempt = 0; attempt < 50; attempt++) {
+          let v = "";
+          for (let i = 0; i < splitDigits; i++) v += String(1 + Math.floor(Math.random() * 9));
+          const pairs = v.match(/../g);
+          if (new Set(pairs).size === pairs.length) return v;
+        }
+        return v;
+      }
+      function splitDistractors() {
+        const real = new Set(splitPairs),
+          out = new Set();
+        const ok = (c) => /^[1-9][1-9]$/.test(c) && !real.has(c);
+        const boundary = [],
+          reversed = [],
+          near = [];
+        for (let i = 1; i + 1 < splitValue.length; i += 2) boundary.push(splitValue[i] + splitValue[i + 1]);
+        for (const p of splitPairs) {
+          reversed.push(p[1] + p[0]);
+          for (const d of [1, -1, 10, -10]) near.push(String(Number(p) + d));
+        }
+        const confusers = [...shuffle(boundary), ...shuffle(reversed), ...shuffle(near)].filter(ok);
+        const need = splitChoices - splitPairs.length,
+          nConfuse = Math.round(need * splitConfuse);
+        for (const c of confusers) {
+          if (out.size >= nConfuse) break;
+          out.add(c);
+        }
+        let guard = 0;
+        while (out.size < need && guard++ < 500) {
+          const c = String(1 + Math.floor(Math.random() * 9)) + String(1 + Math.floor(Math.random() * 9));
+          if (ok(c)) out.add(c);
+        }
+        return [...out];
+      }
+      function splitReset() {
+        splitValue = splitGenerate();
+        splitPairs = splitValue.match(/../g);
+        splitOptions = shuffle([...splitPairs, ...splitDistractors()]);
+        splitFound = [];
+        $("splitNumber").textContent = splitValue;
+        const grid = $("splitChoices");
+        grid.replaceChildren();
+        grid.style.setProperty("--cols", splitOptions.length > 12 ? 4 : splitOptions.length > 6 ? 4 : 3);
+        for (const v of splitOptions) {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "split-choice";
+          b.textContent = v;
+          b.addEventListener("click", () => splitPress(v, b));
+          grid.append(b);
+        }
+        splitRefresh();
+      }
+      function splitRefresh() {
+        if (mode !== "split") return;
+        $("splitStudy").hidden = state !== "preview";
+        $("splitPlay").hidden = state !== "playing" && state !== "finished";
+        $("splitPrompt").textContent = splitOrdered ? "TAP THE PAIRS IN ORDER" : "TAP ALL THE PAIRS";
+        const slots = $("splitSlots");
+        slots.replaceChildren();
+        splitPairs.forEach((p, i) => {
+          const s = document.createElement("span");
+          const shown = splitOrdered ? i < splitFound.length : splitFound.includes(p);
+          s.className = "split-slot" + (shown ? " filled" : "");
+          s.textContent = shown ? p : "··";
+          slots.append(s);
+        });
+        for (const b of $("splitChoices").children)
+          b.disabled = state !== "playing" || b.classList.contains("used");
+      }
+      function splitPress(v, btn) {
+        if (mode !== "split" || state !== "playing" || btn.classList.contains("used")) return;
+        const remaining = splitPairs.filter((p) => !splitFound.includes(p));
+        const expected = splitOrdered ? [splitPairs[splitFound.length]] : remaining;
+        if (expected.includes(v)) {
+          splitFound.push(v);
+          nextIndex = splitFound.length;
+          refs.found.textContent = String(nextIndex);
+          btn.classList.add("used", "found");
+          playEffect("correct");
+          flashStatus("✓ " + v);
+          splitRefresh();
+          if (splitFound.length === splitPairs.length) finish("win");
+          return;
+        }
+        mistakeCount++;
+        updateMistakeLabel();
+        playEffect("wrong");
+        if (splitOrdered && remaining.includes(v)) {
+          flashStatus("Right pair, wrong order", true);
+          btn.classList.add("shake-btn");
+          setTimeout(() => btn.classList.remove("shake-btn"), 350);
+        } else {
+          btn.classList.add("used", "miss");
+          flashStatus("✕ Not a pair", true);
+        }
+        splitRefresh();
+        if (mistakeCount > splitAllowed) finish("mistakes");
+      }
       function gameDuration() {
         const level = activeLevel();
         if (
           level &&
           level.time !== undefined &&
-          ["focus", "category", "pattern", "links", "speed"].includes(mode)
+          ["focus", "category", "pattern", "links", "speed", "split"].includes(mode)
         )
           return level.time * 1000;
         return mode === "digits"
@@ -4649,7 +4882,7 @@
         return Infinity;
       }
       function spinAllowed() {
-        return mode === "pattern" || mode === "links" || mode === "digits"
+        return mode === "pattern" || mode === "links" || mode === "digits" || mode === "split"
           ? false
           : mode === "speed"
             ? speedRingSpin
@@ -4691,6 +4924,7 @@
         refs.patternPanel.hidden = mode !== "pattern";
         refs.linksPanel.hidden = mode !== "links";
         refs.digitPanel.hidden = mode !== "digits";
+        $("splitPanel").hidden = mode !== "split";
         refs.itemCountPanel.hidden = !(mode === "category");
         refs.levelDetails.textContent =
           LEVELS[focusLevel].description +
@@ -4783,6 +5017,8 @@
         const look = `👁 ${studySecs()}s look`;
         if (mode === "speed")
           return `Tap the target shown in the centre.\n${t} · ${speedWindowMs / 1000}s per target · ${speedRingCount} ring${speedRingCount > 1 ? "s" : ""}`;
+        if (mode === "split")
+          return `Remember the number, then tap its pairs${splitOrdered ? " IN ORDER" : ""} (e.g. 453278 → 45 32 78).\n${look} · ${t} · ${splitAllowed === Infinity ? "mistakes counted" : splitAllowed ? "≤ " + splitAllowed + " wrong tap" + (splitAllowed === 1 ? "" : "s") : "no wrong taps"}`;
         if (mode === "digits")
           return `Remember ${digitLength} ${isPictureRecall() ? recallLabel().toLowerCase() : "digits"}, then enter them forward or backward.\n${look} · ⏱ ${digitAnswerMs === Infinity ? "no limit" : digitAnswerMs / 1000 + "s"}`;
         if (mode === "pattern")
@@ -4854,6 +5090,7 @@
       }
 
       function currentItemCount() {
+        if (mode === "split") return splitDigits / 2;
         return mode === "digits"
           ? digitLength
           : mode === "speed"
@@ -5353,6 +5590,10 @@
         }, 1100);
       }
       function updateTarget() {
+        if (mode === "split") {
+          refs.next.textContent = "✂️";
+          return;
+        }
         if (mode === "digits") {
           refs.next.textContent =
             { number: "🔟", fruit: "🍎", animal: "🐶", flag: "🌐", word: "🔤" }[digitKind] || "🔟";
@@ -5464,6 +5705,9 @@
         } else if (mode === "links") {
           reshuffleLinks();
           setStatus("Numbers shuffled! Connect them in the remembered order.");
+        } else if (mode === "split") {
+          splitRefresh();
+          setStatus(splitOrdered ? "Tap the pairs in order!" : "Tap all the pairs!");
         } else
           setStatus(
             mode === "focus"
@@ -5528,12 +5772,15 @@
           refreshLinks();
         }
         if (mode === "digits") digitRefresh();
+        if (mode === "split") splitRefresh();
         refs.timer.classList.remove("danger");
         refs.stage.textContent = currentPreviewUnlimited()
           ? "Take your time — tap Start Now when ready"
           : mode === "links"
             ? "Remember the arrow order!"
-            : "Memorize the positions!";
+            : mode === "split"
+              ? "Memorize the number!"
+              : "Memorize the positions!";
         setStatus("");
         unlockAudio();
         cancelAnimationFrame(rafId);
@@ -5748,6 +5995,21 @@
           showRoundScore(completedRound);
           return;
         }
+        if (mode === "split") {
+          splitRefresh();
+          const answer = `${splitValue} → ${splitPairs.join(" · ")}`;
+          if (reason === "win") {
+            playEffect("win");
+            showOverlay("✂️ All pairs found!", answer, "New number");
+          } else {
+            playEffect("wrong");
+            showOverlay(reason === "time" ? "⏱ Time’s up!" : "✂️ Too many wrong taps", answer, "New number");
+          }
+          refs.analysis.hidden = true;
+          refs.analysisJump.hidden = true;
+          showRoundScore(completedRound);
+          return;
+        }
         if (mode === "digits") {
           const type = isPictureRecall() ? recallLabel() : "Digits";
           if (reason === "win") {
@@ -5908,8 +6170,12 @@
         refs.patternBoard.toggleAttribute("hidden", mode !== "pattern");
         refs.linksBoard.toggleAttribute("hidden", mode !== "links");
         refs.digitBoard.toggleAttribute("hidden", mode !== "digits");
+        $("splitBoard").toggleAttribute("hidden", mode !== "split");
         if (mode === "digits") {
           refs.wheel.replaceChildren();
+        } else if (mode === "split") {
+          refs.wheel.replaceChildren();
+          splitReset();
         } else if (mode === "pattern") {
           refs.wheel.replaceChildren();
           resetPatternBoard();
@@ -5932,9 +6198,11 @@
                 ? "Number Links 🔗"
                 : mode === "digits"
                   ? "Sequence Recall 🔟"
-                  : mode === "category"
-                    ? currentCategoryLabel() + " Match 🧩"
-                    : "Number Focus 🔢",
+                  : mode === "split"
+                    ? "Split ✂️"
+                    : mode === "category"
+                      ? currentCategoryLabel() + " Match 🧩"
+                      : "Number Focus 🔢",
           quickIntro(),
           mode === "speed"
             ? `Start ${limitSecs()}-second round`
@@ -5959,6 +6227,7 @@
           ["links", "linksMode"],
           ["digits", "digitMode"],
           ["speed", "speedMode"],
+          ["split", "splitMode"],
         ]) {
           const active = name === mode;
           $(id).classList.toggle("active", active);
@@ -5976,20 +6245,22 @@
                   ? "Matched"
                   : "Found";
         refs.nextLabel.textContent =
-          mode === "digits"
-            ? "Recall"
-            : mode === "speed"
-              ? "Find target"
-              : mode === "links"
-                ? "Connect"
-                : mode === "pattern"
-                  ? "Lock"
-                  : mode === "category"
-                    ? "Find item"
-                    : "Find number";
+          mode === "split"
+            ? "Pairs"
+            : mode === "digits"
+              ? "Recall"
+              : mode === "speed"
+                ? "Find target"
+                : mode === "links"
+                  ? "Connect"
+                  : mode === "pattern"
+                    ? "Lock"
+                    : mode === "category"
+                      ? "Find item"
+                      : "Find number";
         refs.next.classList.toggle(
           "target-word",
-          ["category", "pattern", "links", "digits", "speed"].includes(mode),
+          ["category", "pattern", "links", "digits", "speed", "split"].includes(mode),
         );
         if (mode === "focus") refs.instructions.textContent = "Find numbers 1–50.";
         else if (mode === "category")
@@ -6172,6 +6443,7 @@
         ["links", "linksMode"],
         ["digits", "digitMode"],
         ["speed", "speedMode"],
+        ["split", "splitMode"],
       ])
         $(id).addEventListener("click", () => changeMode(name));
       refs.linksBoard.addEventListener("pointerdown", linksDown);
@@ -6183,6 +6455,18 @@
       refs.linksLength.addEventListener("change", () => {
         linksLength = Number(refs.linksLength.value);
         updateLevelUi();
+        resetGame();
+      });
+      $("splitDigitsSelect").addEventListener("change", (e) => {
+        splitDigits = Number(e.target.value);
+        resetGame();
+      });
+      $("splitChoicesSelect").addEventListener("change", (e) => {
+        splitChoices = Number(e.target.value);
+        resetGame();
+      });
+      $("splitOrderedCheck").addEventListener("change", (e) => {
+        splitOrdered = e.target.checked;
         resetGame();
       });
       refs.digitKind.addEventListener("change", () => {
@@ -6302,6 +6586,7 @@
       const GAME_NAMES = {
         links: "🔗 Number Links",
         digits: "🔟 Sequence Recall",
+        split: "✂️ Split",
         speed: "🎯 Speed Target",
         coop: "🤝 Numbers Co-op",
         focus: "🔢 Numbers",
@@ -6457,6 +6742,8 @@
         renderProfileSummary();
       }
       function difficultyName() {
+        if (mode === "split")
+          return `${splitDigits} digits · ${splitOptions.length} choices${splitOrdered ? " · in order" : ""}`;
         if (mode === "speed")
           return `${speedCategoryLabel()} · ${currentItemCount()} icons · ${speedWindowMs / 1000}s · ${speedRingCount} ring${speedRingCount > 1 ? "s" : ""} · ${speedRingSpin ? speedRingRate + " spin" : "Still"}`;
         if (mode === "focus")
@@ -6733,7 +7020,33 @@
       for (const g of ["focus", "category", "pattern", "links"])
         for (const L of LEVEL_LADDERS[g]) L.time = L.t2;
       for (const L of LEVEL_LADDERS.digits) L.answer = L.t2;
-      const LEVEL_GAMES = ["focus", "category", "pattern", "links", "digits", "speed"];
+      LEVEL_LADDERS.split = [
+        // digits, choices, look (s), share of trap distractors, in order, allowed wrong taps, time (s)
+        [4, 6, 4, 0.3, false, 1, 15],
+        [6, 8, 4, 0.4, false, 1, 20],
+        [6, 10, 3, 0.6, false, 1, 20],
+        [8, 10, 4, 0.5, false, 1, 25],
+        [8, 12, 4, 0.7, false, 0, 25],
+        [6, 10, 3, 0.7, true, 0, 20],
+        [10, 12, 5, 0.7, false, 0, 30],
+        [8, 12, 3, 0.8, true, 0, 25],
+        [10, 16, 4, 0.85, false, 0, 30],
+        [12, 16, 5, 0.9, false, 0, 35],
+        [10, 16, 4, 0.9, true, 0, 30],
+        [12, 16, 4, 1, true, 0, 35],
+      ].map(([digits, choices, preview, confuse, ordered, m2, time]) => ({
+        digits,
+        choices,
+        preview,
+        confuse,
+        ordered,
+        m2,
+        m3: 0,
+        time,
+        t2: time,
+        t3: Math.round(time * 0.5),
+      }));
+      const LEVEL_GAMES = ["focus", "category", "pattern", "links", "digits", "speed", "split"];
       // Bump a game's version whenever its ladder changes meaning; older rounds are then archived.
       const LADDER_VERSION = { pattern: 2, speed: 2 };
       function ladderVersion(game) {
@@ -6815,6 +7128,8 @@
             .join(" · ");
         if (game === "links") return `${L.length} links · ${L.preview}s to look`;
         if (game === "digits") return `${L.length} ${KIND_LABELS[L.kind]} · ${L.preview}s to look`;
+        if (game === "split")
+          return `${L.digits} digits · ${L.choices} choices · ${L.preview}s to look${L.ordered ? " · in order" : ""}`;
         if (game === "speed")
           return `${L.cat === "number" ? "Numbers" : CATEGORY_SETS[L.cat].label} · ${L.time}s round · ${L.rings} ring${L.rings > 1 ? "s" : ""} · ${L.window}s/target · ${L.rate}`;
         return "";
@@ -6828,10 +7143,14 @@
           return `${h2} correct taps · ≤ 1 miss`;
         }
         if (game === "focus" || game === "category") return `Finish in ≤ ${L.t2}s · ${mistakes(L.m2)}`;
+        if (game === "split")
+          return `All ${L.digits / 2} pairs${L.ordered ? " in order" : ""} · ${L.m2 ? "≤ " + L.m2 + " wrong tap" : "no wrong taps"}`;
         return `${game === "pattern" && L.backward ? "Correct, backwards," : "Correct"} in ≤ ${L.t2}s`;
       }
       function roundOutcomeText(r) {
         const secs = ((Number(r.elapsedMs) || 0) / 1000).toFixed(1);
+        if (r.game === "split")
+          return `You: ${r.found} of ${r.count} pairs · ${r.mistakes} wrong tap${r.mistakes === 1 ? "" : "s"}`;
         if (r.game === "speed")
           return `You: ${r.found} correct · ${r.misses ?? 0} miss${r.misses === 1 ? "" : "es"}`;
         if (r.game === "focus" || r.game === "category")
@@ -6856,7 +7175,7 @@
         if (r.outcome !== "win") return 0;
         const t = (Number(r.elapsedMs) || 0) / 1000,
           m = Number(r.mistakes) || 0;
-        if (game === "focus" || game === "category") {
+        if (game === "focus" || game === "category" || game === "split") {
           if (t <= L.t3 && m <= L.m3) return 3;
           if (t <= L.t2 && m <= L.m2) return 2;
           return 1;
@@ -6923,6 +7242,15 @@
           digitAnswerMs = L.answer * 1000;
           refs.digitAnswerTime.value = String(L.answer);
           syncDigitSettings();
+        } else if (game === "split") {
+          splitDigits = L.digits;
+          $("splitDigitsSelect").value = String(L.digits);
+          splitChoices = L.choices;
+          $("splitChoicesSelect").value = String(L.choices);
+          splitOrdered = L.ordered;
+          $("splitOrderedCheck").checked = L.ordered;
+          splitConfuse = L.confuse;
+          splitAllowed = L.m2;
         } else if (game === "speed") {
           speedCategory = L.cat;
           $("speedCategory").value = L.cat;
@@ -6954,6 +7282,8 @@
         $("practiceTab").setAttribute("aria-pressed", String(practice));
         $("gameSettings").open = false;
         if (practice) {
+          splitAllowed = Infinity;
+          splitConfuse = 0.6;
           updateLevelUi();
           resetGame();
           updateLevelBar();
