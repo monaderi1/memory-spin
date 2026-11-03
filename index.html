@@ -3282,6 +3282,45 @@
         touch-action: manipulation;
         padding: 0;
       }
+      .rain-drop.rain-kind-word {
+        width: auto;
+        min-width: 64px;
+        padding: 0 10px;
+        border-radius: 999px;
+        font-size: clamp(13px, 3.8vw, 16px);
+        letter-spacing: 0.3px;
+      }
+      .rain-drop.rain-kind-fruit,
+      .rain-drop.rain-kind-animal,
+      .rain-drop.rain-kind-flag {
+        font:
+          clamp(24px, 7vw, 32px) / 1 "Noto Color Emoji",
+          "Segoe UI Emoji",
+          "Apple Color Emoji",
+          sans-serif;
+      }
+      #rainBoard.night .rain-drop:not(.rain-kind-number):not(.rain-kind-word) {
+        filter: grayscale(0.85) brightness(0.75);
+      }
+      #rainBoard.night.lit .rain-drop {
+        filter: none;
+      }
+      #rainStudyNumbers span.rain-kind-word {
+        width: auto;
+        min-width: 64px;
+        padding: 0 12px;
+        border-radius: 999px;
+        font-size: 18px;
+      }
+      #rainStudyNumbers span.rain-kind-fruit,
+      #rainStudyNumbers span.rain-kind-animal,
+      #rainStudyNumbers span.rain-kind-flag {
+        font:
+          34px/1 "Noto Color Emoji",
+          "Segoe UI Emoji",
+          "Apple Color Emoji",
+          sans-serif;
+      }
       .rain-drop.caught {
         animation: rainCaught 0.38s ease-out forwards;
         background: #8febc0;
@@ -4128,7 +4167,15 @@
                 >
               </section>
               <section class="level-panel" id="rainPanel" aria-label="Rain settings" hidden>
-                <label for="rainTargetsSelect">Numbers to remember</label>
+                <label for="rainKindSelect">Content</label>
+                <select id="rainKindSelect">
+                  <option value="number" selected>🔢 Numbers</option>
+                  <option value="word">🔤 Words</option>
+                  <option value="fruit">🍎 Fruits</option>
+                  <option value="animal">🐶 Animals</option>
+                  <option value="flag">🇦🇺 Flags</option>
+                </select>
+                <label for="rainTargetsSelect">How many to remember</label>
                 <select id="rainTargetsSelect">
                   <option value="2">2</option>
                   <option value="3" selected>3</option>
@@ -5853,6 +5900,90 @@
         }
       }
       const RAIN_LIVES = 3;
+      // Content: numbers and words in the level ladder (both must be read); pictures in Practice.
+      // Picture traps come from the same colour family (🍎 → 🍓 🍒), so colour alone doesn't give
+      // the answer away; at night colours fade too.
+      let rainKind = "number";
+      const RAIN_TONES = {
+        fruit: {
+          "🍎": "red",
+          "🍓": "red",
+          "🍒": "red",
+          "🍉": "red",
+          "🍌": "yellow",
+          "🍍": "yellow",
+          "🍋": "yellow",
+          "🍊": "orange",
+          "🥭": "orange",
+          "🍑": "orange",
+          "🍐": "green",
+          "🥝": "green",
+          "🍈": "green",
+          "🍇": "purple",
+          "🥥": "brown",
+        },
+        animal: {
+          "🐶": "brown",
+          "🐴": "brown",
+          "🐵": "brown",
+          "🦆": "brown",
+          "🐮": "white",
+          "🐑": "white",
+          "🐔": "white",
+          "🐓": "white",
+          "🐱": "gold",
+          "🦁": "gold",
+          "🐝": "gold",
+          "🐸": "green",
+          "🐷": "pink",
+          "🐘": "grey",
+          "🐦": "blue",
+        },
+        flag: {
+          "🇦🇺": "blue",
+          "🇳🇿": "blue",
+          "🇺🇸": "blue",
+          "🇬🇧": "blue",
+          "🇫🇷": "blue",
+          "🇯🇵": "redwhite",
+          "🇨🇦": "redwhite",
+          "🇰🇷": "redwhite",
+          "🇮🇹": "tricolour",
+          "🇲🇽": "tricolour",
+          "🇮🇳": "tricolour",
+          "🇩🇪": "warm",
+          "🇪🇸": "warm",
+          "🇧🇷": "green",
+          "🇿🇦": "green",
+        },
+      };
+      function rainPool() {
+        if (rainKind === "word") return WORDS.map((w) => w.icon);
+        if (rainKind === "fruit") return FRUITS.map((f) => f.icon);
+        if (rainKind === "animal") return ANIMALS.map((a) => a.icon);
+        if (rainKind === "flag") return FLAGS.map((f) => f.icon);
+        return null;
+      }
+      function rainSimilarity(a, b) {
+        let shared = 0;
+        for (const ch of new Set(a)) if (b.includes(ch)) shared++;
+        return shared + (a.length === b.length ? 1 : 0) + (a[0] === b[0] ? 1 : 0);
+      }
+      function rainTrapsFor(t) {
+        if (rainKind === "number")
+          return [
+            t[1] + t[0],
+            String(Number(t) + 1),
+            String(Number(t) - 1),
+            String(Number(t) + 10),
+            String(Number(t) - 10),
+          ].filter((c) => /^[1-9][0-9]$/.test(c));
+        const pool = rainPool().filter((v) => v !== t);
+        if (rainKind === "word")
+          return pool.sort((a, b) => rainSimilarity(t, b) - rainSimilarity(t, a)).slice(0, 4);
+        const tones = RAIN_TONES[rainKind] || {};
+        return pool.filter((v) => tones[v] && tones[v] === tones[t]);
+      }
       function rainRandomNumber() {
         return String(11 + Math.floor(Math.random() * 89));
       }
@@ -5861,7 +5992,15 @@
         $("rainBoard").classList.remove("lit");
         const set = new Set();
         let guard = 0;
-        while (set.size < rainTargetsCount && guard++ < 500) {
+        const pool = rainPool();
+        if (pool) {
+          // pictures/words: prefer targets that have look-alikes, so traps exist
+          const ranked = shuffle([...pool]).sort(
+            (a, b) => (rainTrapsFor(b).length ? 1 : 0) - (rainTrapsFor(a).length ? 1 : 0),
+          );
+          for (const v of ranked) if (set.size < rainTargetsCount) set.add(v);
+        }
+        while (!pool && set.size < rainTargetsCount && guard++ < 500) {
           const n = rainRandomNumber();
           const rev = n[1] + n[0];
           // avoid doubles, numbers ending in 0, and two targets that are each other's reverse
@@ -5877,6 +6016,7 @@
         $("rainStudyNumbers").replaceChildren(
           ...rainTargets.map((n) => {
             const s = document.createElement("span");
+            s.className = "rain-kind-" + rainKind;
             s.textContent = n;
             return s;
           }),
@@ -5896,17 +6036,12 @@
         if (Math.random() < rainShare) return rainTargets[Math.floor(Math.random() * rainTargets.length)];
         if (Math.random() < rainTrap) {
           const t = rainTargets[Math.floor(Math.random() * rainTargets.length)];
-          const traps = [
-            t[1] + t[0],
-            String(Number(t) + 1),
-            String(Number(t) - 1),
-            String(Number(t) + 10),
-            String(Number(t) - 10),
-          ].filter((c) => /^[1-9][0-9]$/.test(c) && !rainTargets.includes(c));
+          const traps = rainTrapsFor(t).filter((c) => !rainTargets.includes(c));
           if (traps.length) return traps[Math.floor(Math.random() * traps.length)];
         }
+        const pool = rainPool();
         let v;
-        do v = rainRandomNumber();
+        do v = pool ? pool[Math.floor(Math.random() * pool.length)] : rainRandomNumber();
         while (rainTargets.includes(v));
         return v;
       }
@@ -5914,7 +6049,7 @@
         const value = rainPickValue();
         const el = document.createElement("button");
         el.type = "button";
-        el.className = "rain-drop";
+        el.className = "rain-drop rain-kind-" + rainKind;
         el.textContent = value;
         const drop = { id: ++rainSerial, value, x: 22 + Math.random() * 56, y: -8, el, done: false };
         el.style.left = drop.x + "%";
@@ -6142,7 +6277,7 @@
         if (mode === "speed")
           return `Tap the target shown in the centre.\n${t} · ${speedWindowMs / 1000}s per target · ${speedRingCount} ring${speedRingCount > 1 ? "s" : ""}`;
         if (mode === "rain")
-          return `Remember your ${rainTargetsCount} numbers, then tap only those as numbers fall. Catch ${rainGoal}.\n${look} · ${t} · 3 ❤️`;
+          return `Remember your ${rainTargetsCount} ${{ number: "numbers", word: "words", fruit: "fruits", animal: "animals", flag: "flags" }[rainKind]}, then tap only those as they fall. Catch ${rainGoal}.\n${look} · ${t} · 3 ❤️`;
         if (mode === "split")
           return `Remember the number, then tap its pairs${splitOrdered ? " IN ORDER" : ""}.${splitRules.length > 1 ? " The split rule appears after it hides." : ""}\n${look} · ${t} · ${splitAllowed === Infinity ? "mistakes counted" : splitAllowed ? "≤ " + splitAllowed + " wrong tap" + (splitAllowed === 1 ? "" : "s") : "no wrong taps"}`;
         if (mode === "digits")
@@ -7712,6 +7847,10 @@
         updateLevelUi();
         resetGame();
       });
+      $("rainKindSelect").addEventListener("change", (e) => {
+        rainKind = e.target.value;
+        resetGame();
+      });
       $("rainTargetsSelect").addEventListener("change", (e) => {
         rainTargetsCount = Number(e.target.value);
         resetGame();
@@ -8025,7 +8164,8 @@
         renderProfileSummary();
       }
       function difficultyName() {
-        if (mode === "rain") return `${rainTargetsCount} numbers · ${rainFallSec}s fall · goal ${rainGoal}`;
+        if (mode === "rain")
+          return `${rainKind} · ${rainTargetsCount} to remember · ${rainFallSec}s fall · goal ${rainGoal}`;
         if (mode === "split")
           return `${splitDigits} digits · ${splitOptions.length} choices${splitOrdered ? " · in order" : ""}`;
         if (mode === "speed")
@@ -8358,6 +8498,7 @@
         [6, 3.2, 550, 0.25, 0.9, 18, 50, 5],
         [6, 2.8, 500, 0.25, 1, 20, 50, 4],
       ].map(([targets, fall, spawn, share, trap, goal, time, preview], i) => ({
+        kind: i + 1 === 4 || i + 1 === 8 ? "word" : "number",
         storm: i + 1 >= 7,
         // seconds between lightning strikes (min, max): more frequent on higher levels
         bolt: i + 1 >= 11 ? [2, 3.5] : i + 1 >= 9 ? [2.8, 4.5] : [4, 6],
@@ -8379,7 +8520,7 @@
       }));
       const LEVEL_GAMES = ["focus", "category", "pattern", "links", "digits", "speed", "split", "rain"];
       // Bump a game's version whenever its ladder changes meaning; older rounds are then archived.
-      const LADDER_VERSION = { pattern: 2, speed: 3, split: 2 };
+      const LADDER_VERSION = { pattern: 2, speed: 3, split: 2, rain: 2 };
       function ladderVersion(game) {
         return LADDER_VERSION[game] || 1;
       }
@@ -8692,7 +8833,7 @@
         if (game === "links") return `${L.length} links · ${L.preview}s to look`;
         if (game === "digits") return `${L.length} ${KIND_LABELS[L.kind]} · ${L.preview}s to look`;
         if (game === "rain")
-          return `${L.targets} numbers · ${L.fall}s fall · catch ${L.goal}${L.night ? " · 🌙 night" : L.storm ? " · ⚡ storm" : ""}`;
+          return `${L.targets} ${L.kind === "word" ? "words" : "numbers"} · ${L.fall}s fall · catch ${L.goal}${L.night ? " · 🌙 night" : L.storm ? " · ⚡ storm" : ""}`;
         if (game === "split")
           return `${L.digits} digits · ${L.preview}s to look${L.rules.length > 1 ? " · rule after" : ""}${L.ordered ? " · in order" : ""}`;
         if (game === "speed")
@@ -8824,6 +8965,8 @@
           syncDigitSettings();
         } else if (game === "rain") {
           rainTargetsCount = L.targets;
+          rainKind = L.kind;
+          $("rainKindSelect").value = L.kind;
           $("rainTargetsSelect").value = String(L.targets);
           rainFallSec = L.fall;
           rainSpawnMs = L.spawn;
