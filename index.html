@@ -2057,7 +2057,7 @@
 
       /* Speed Target: mobile-sized selectable annular cells, fixed centre target */
       #playScreen .mode-switch {
-        grid-template-columns: repeat(7, minmax(0, 1fr));
+        grid-template-columns: repeat(8, minmax(0, 1fr));
       }
       /* Number Links: only the values and their connection order matter, not screen positions. */
       .board-shell[data-mode="links"] .board-rotor {
@@ -3235,6 +3235,114 @@
         pointer-events: none;
         opacity: 0.4;
       }
+      /* 8 games: keep names inside their buttons */
+      #playScreen .mode-choice {
+        padding-inline: 1px;
+      }
+      #playScreen .mode-title {
+        font-size: 8.5px;
+        letter-spacing: -0.2px;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      /* ---------- Rain ---------- */
+      .board-shell[data-mode="rain"] .board-rotor {
+        display: none;
+      }
+      #rainBoard {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        border-radius: 50%;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 18%, #20406488, transparent 60%),
+          linear-gradient(180deg, #13284a, #0c1a31);
+        border: 2px solid #365a78;
+      }
+      #rainField {
+        position: absolute;
+        inset: 0;
+      }
+      .rain-drop {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        width: clamp(44px, 13vw, 58px);
+        height: clamp(44px, 13vw, 58px);
+        border-radius: 50%;
+        border: 2px solid #c7d3e6;
+        background: radial-gradient(circle at 35% 30%, #ffffff, #dfe8f6);
+        color: #1e40af;
+        font:
+          850 clamp(17px, 5vw, 22px) / 1 Arial,
+          sans-serif;
+        font-variant-numeric: tabular-nums;
+        box-shadow: 0 4px 12px #0007;
+        touch-action: manipulation;
+        padding: 0;
+      }
+      .rain-drop.caught {
+        animation: rainCaught 0.38s ease-out forwards;
+        background: #8febc0;
+      }
+      .rain-drop.wrong {
+        animation: rainWrong 0.38s ease-out forwards;
+        background: #ff9d95;
+      }
+      .rain-drop.gone {
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      @keyframes rainCaught {
+        to {
+          transform: translate(-50%, -50%) scale(1.6);
+          opacity: 0;
+        }
+      }
+      @keyframes rainWrong {
+        30% {
+          transform: translate(-60%, -50%);
+        }
+        60% {
+          transform: translate(-40%, -50%);
+        }
+        to {
+          transform: translate(-50%, -50%) scale(0.6);
+          opacity: 0;
+        }
+      }
+      #rainStudy {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        z-index: 2;
+        background: #0c1a31ee;
+      }
+      #rainStudyNumbers {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        max-width: 80%;
+      }
+      #rainStudyNumbers span {
+        display: grid;
+        place-items: center;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #fffbe6, #ffe08a);
+        color: #1e40af;
+        font:
+          900 26px Arial,
+          sans-serif;
+        box-shadow: 0 4px 14px #0008;
+      }
       /* ---------- Board animations ---------- */
       .cell text {
         transform-box: fill-box;
@@ -3520,6 +3628,9 @@
           <button class="mode-choice" id="splitMode" aria-pressed="false" type="button">
             <span class="mode-icon" aria-hidden="true">✂️</span><span class="mode-title">Split</span>
           </button>
+          <button class="mode-choice" id="rainMode" aria-pressed="false" type="button">
+            <span class="mode-icon" aria-hidden="true">🌧️</span><span class="mode-title">Rain</span>
+          </button>
         </div>
         <div class="ch-bar" id="challengeBar">
           <span id="challengeBarText">Challenge</span><button type="button" id="challengeQuit">✕ Quit</button>
@@ -3602,6 +3713,14 @@
               <path id="linksLiveLine" />
               <g id="linksDots"></g>
             </svg>
+            <div id="rainBoard" hidden aria-label="Tap your numbers as they fall">
+              <div id="rainField"></div>
+              <div id="rainStudy" hidden>
+                <span class="digit-small">REMEMBER YOUR NUMBERS</span>
+                <div id="rainStudyNumbers"></div>
+                <span class="digit-help">Tap only these when they fall. Let the rest go.</span>
+              </div>
+            </div>
             <div id="splitBoard" hidden aria-label="Split the number into pairs">
               <div id="splitStudy" class="split-study" hidden>
                 <span class="digit-small">MEMORIZE THIS NUMBER</span>
@@ -3817,6 +3936,23 @@
                   original order with one finger swipe. One attempt, 20 seconds.</small
                 >
               </section>
+              <section class="level-panel" id="rainPanel" aria-label="Rain settings" hidden>
+                <label for="rainTargetsSelect">Numbers to remember</label>
+                <select id="rainTargetsSelect">
+                  <option value="2">2</option>
+                  <option value="3" selected>3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                </select>
+                <label for="rainSpeedSelect">Rain speed</label>
+                <select id="rainSpeedSelect">
+                  <option value="6">Slow</option>
+                  <option value="4.5" selected>Normal</option>
+                  <option value="3.2">Fast</option>
+                  <option value="2.6">Storm</option>
+                </select>
+              </section>
               <section class="level-panel" id="splitPanel" aria-label="Split settings" hidden>
                 <label for="splitDigitsSelect">Digits</label>
                 <select id="splitDigitsSelect">
@@ -3992,6 +4128,7 @@
               <option value="digits">🔟 Recall</option>
               <option value="speed">🎯 Target</option>
               <option value="split">✂️ Split</option>
+              <option value="rain">🌧️ Rain</option>
             </select></label
           >
           <label
@@ -4241,6 +4378,11 @@
           duration: 30000,
           intro:
             "Remember a random number. After it disappears, enter its digits from left to right or right to left, whichever the game requests.",
+        },
+        rain: {
+          count: 10,
+          duration: 45000,
+          intro: "Remember your numbers, then tap only those as numbers fall.",
         },
         split: {
           count: 3,
@@ -5015,9 +5157,11 @@
                       ? "Find target"
                       : mode === "split"
                         ? "Pairs"
-                        : mode === "focus" && focusReverse
-                          ? "Reverse of"
-                          : "Find number";
+                        : mode === "rain"
+                          ? "Catch"
+                          : mode === "focus" && focusReverse
+                            ? "Reverse of"
+                            : "Find number";
           return;
         }
         const systemTurn = state === "playing" && coopPending;
@@ -5463,12 +5607,145 @@
         splitRefresh();
         if (mistakeCount > splitAllowed) finish("mistakes");
       }
+      // ------- Rain: memorise a few numbers, then tap only those among falling numbers -------
+      // Three lives. A memorised number that falls past the bottom, or a tap on any other number,
+      // costs a life. Traps are reversed or near versions of the memorised numbers (47 → 74, 48).
+      let rainTargetsCount = 3,
+        rainFallSec = 5,
+        rainSpawnMs = 900,
+        rainShare = 0.32,
+        rainTrap = 0.6,
+        rainGoal = 10,
+        rainTargets = [],
+        rainDrops = [],
+        rainNextSpawn = 0,
+        rainLastT = 0,
+        rainSerial = 0;
+      const RAIN_LIVES = 3;
+      function rainRandomNumber() {
+        return String(11 + Math.floor(Math.random() * 89));
+      }
+      function rainReset() {
+        const set = new Set();
+        let guard = 0;
+        while (set.size < rainTargetsCount && guard++ < 500) {
+          const n = rainRandomNumber();
+          const rev = n[1] + n[0];
+          // avoid doubles, numbers ending in 0, and two targets that are each other's reverse
+          if (n[0] === n[1] || n[1] === "0" || set.has(rev)) continue;
+          set.add(n);
+        }
+        rainTargets = [...set];
+        rainDrops.forEach((d) => d.el.remove());
+        rainDrops = [];
+        rainNextSpawn = 0;
+        rainLastT = 0;
+        $("rainStudyNumbers").replaceChildren(
+          ...rainTargets.map((n) => {
+            const s = document.createElement("span");
+            s.textContent = n;
+            return s;
+          }),
+        );
+        rainRefresh();
+      }
+      function rainRefresh() {
+        if (mode !== "rain") return;
+        $("rainStudy").hidden = state !== "preview";
+        updateMistakeLabel();
+      }
+      function rainLivesText() {
+        const left = Math.max(0, RAIN_LIVES - mistakeCount);
+        return "❤️".repeat(left) + "🤍".repeat(RAIN_LIVES - left);
+      }
+      function rainPickValue() {
+        if (Math.random() < rainShare) return rainTargets[Math.floor(Math.random() * rainTargets.length)];
+        if (Math.random() < rainTrap) {
+          const t = rainTargets[Math.floor(Math.random() * rainTargets.length)];
+          const traps = [
+            t[1] + t[0],
+            String(Number(t) + 1),
+            String(Number(t) - 1),
+            String(Number(t) + 10),
+            String(Number(t) - 10),
+          ].filter((c) => /^[1-9][0-9]$/.test(c) && !rainTargets.includes(c));
+          if (traps.length) return traps[Math.floor(Math.random() * traps.length)];
+        }
+        let v;
+        do v = rainRandomNumber();
+        while (rainTargets.includes(v));
+        return v;
+      }
+      function rainSpawn() {
+        const value = rainPickValue();
+        const el = document.createElement("button");
+        el.type = "button";
+        el.className = "rain-drop";
+        el.textContent = value;
+        const drop = { id: ++rainSerial, value, x: 22 + Math.random() * 56, y: -8, el, done: false };
+        el.style.left = drop.x + "%";
+        el.style.top = drop.y + "%";
+        el.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          rainTap(drop);
+        });
+        $("rainField").append(el);
+        rainDrops.push(drop);
+      }
+      function rainLoseLife(drop, why) {
+        mistakeCount++;
+        updateMistakeLabel();
+        playEffect("wrong");
+        flashStatus(why, true);
+        if (mistakeCount >= RAIN_LIVES) finish("mistakes");
+      }
+      function rainRemove(drop, cls) {
+        drop.done = true;
+        drop.el.classList.add(cls);
+        drop.el.disabled = true;
+        setTimeout(() => drop.el.remove(), 380);
+        rainDrops = rainDrops.filter((d) => d !== drop);
+      }
+      function rainTap(drop) {
+        if (mode !== "rain" || state !== "playing" || drop.done) return;
+        if (rainTargets.includes(drop.value)) {
+          rainRemove(drop, "caught");
+          nextIndex++;
+          refs.found.textContent = String(nextIndex);
+          playEffect("correct");
+          if (nextIndex >= rainGoal) finish("win");
+        } else {
+          rainRemove(drop, "wrong");
+          rainLoseLife(drop, `✕ ${drop.value} wasn't one of yours`);
+        }
+      }
+      function updateRain(now) {
+        if (mode !== "rain" || state !== "playing") return;
+        const t = now - startedAt,
+          dt = Math.max(0, t - rainLastT);
+        rainLastT = t;
+        if (t >= rainNextSpawn) {
+          rainSpawn();
+          rainNextSpawn = t + rainSpawnMs;
+        }
+        const step = (108 / (rainFallSec * 1000)) * dt; // % of board height per ms
+        for (const drop of [...rainDrops]) {
+          drop.y += step;
+          drop.el.style.top = drop.y + "%";
+          if (drop.y > 100) {
+            const missed = rainTargets.includes(drop.value);
+            rainRemove(drop, "gone");
+            if (missed) rainLoseLife(drop, `⌛ You let ${drop.value} fall`);
+            if (state !== "playing") return;
+          }
+        }
+      }
       function gameDuration() {
         const level = activeLevel();
         if (
           level &&
           level.time !== undefined &&
-          ["focus", "category", "pattern", "links", "speed", "split"].includes(mode)
+          ["focus", "category", "pattern", "links", "speed", "split", "rain"].includes(mode)
         )
           return level.time * 1000;
         return mode === "digits"
@@ -5481,7 +5758,11 @@
         return Infinity;
       }
       function spinAllowed() {
-        return mode === "pattern" || mode === "links" || mode === "digits" || mode === "split"
+        return mode === "pattern" ||
+          mode === "links" ||
+          mode === "digits" ||
+          mode === "split" ||
+          mode === "rain"
           ? false
           : mode === "speed"
             ? speedRingSpin
@@ -5490,7 +5771,12 @@
               : spinEnabled;
       }
       function updateMistakeLabel() {
-        refs.mistakes.textContent = mode === "speed" ? `Misses: ${speedMisses}` : `Mistakes: ${mistakeCount}`;
+        refs.mistakes.textContent =
+          mode === "speed"
+            ? `Misses: ${speedMisses}`
+            : mode === "rain"
+              ? rainLivesText()
+              : `Mistakes: ${mistakeCount}`;
       }
       function syncRingAnimations() {
         const groups = [...refs.wheel.querySelectorAll(".ring-group")];
@@ -5524,6 +5810,7 @@
         refs.linksPanel.hidden = mode !== "links";
         refs.digitPanel.hidden = mode !== "digits";
         $("splitPanel").hidden = mode !== "split";
+        $("rainPanel").hidden = mode !== "rain";
         refs.itemCountPanel.hidden = !(mode === "category");
         refs.levelDetails.textContent =
           LEVELS[focusLevel].description +
@@ -5616,6 +5903,8 @@
         const look = `👁 ${studySecs()}s look`;
         if (mode === "speed")
           return `Tap the target shown in the centre.\n${t} · ${speedWindowMs / 1000}s per target · ${speedRingCount} ring${speedRingCount > 1 ? "s" : ""}`;
+        if (mode === "rain")
+          return `Remember your ${rainTargetsCount} numbers, then tap only those as numbers fall. Catch ${rainGoal}.\n${look} · ${t} · 3 ❤️`;
         if (mode === "split")
           return `Remember the number, then tap its pairs${splitOrdered ? " IN ORDER" : ""}.${splitRules.length > 1 ? " The split rule appears after it hides." : ""}\n${look} · ${t} · ${splitAllowed === Infinity ? "mistakes counted" : splitAllowed ? "≤ " + splitAllowed + " wrong tap" + (splitAllowed === 1 ? "" : "s") : "no wrong taps"}`;
         if (mode === "digits")
@@ -5691,6 +5980,7 @@
       }
 
       function currentItemCount() {
+        if (mode === "rain") return rainGoal;
         if (mode === "focus" && focusReverse) return FOCUS_REV_BASE.length;
         if (mode === "split") return splitPairs.length || splitDigits / 2;
         return mode === "digits"
@@ -6255,6 +6545,10 @@
         }, 1100);
       }
       function updateTarget() {
+        if (mode === "rain") {
+          refs.next.textContent = "🌧️"; // never show the numbers outside the study screen
+          return;
+        }
         if (mode === "split") {
           refs.next.textContent = "✂️";
           return;
@@ -6331,6 +6625,7 @@
           }
         }
         updatePatternMotion(now);
+        updateRain(now);
         rafId = requestAnimationFrame(frame);
       }
       function beginPlaying(now) {
@@ -6382,6 +6677,10 @@
         } else if (mode === "links") {
           reshuffleLinks();
           setStatus("Numbers shuffled! Connect them in the remembered order.");
+        } else if (mode === "rain") {
+          rainRefresh();
+          updateTarget();
+          setStatus("Tap your numbers — let the others fall!");
         } else if (mode === "split") {
           splitStartRound();
           setStatus(
@@ -6453,6 +6752,7 @@
         }
         if (mode === "digits") digitRefresh();
         if (mode === "split") splitRefresh();
+        if (mode === "rain") rainRefresh();
         refs.timer.classList.remove("danger");
         refs.stage.textContent = currentPreviewUnlimited()
           ? "Take your time — tap Start Now when ready"
@@ -6460,7 +6760,9 @@
             ? "Remember the arrow order!"
             : mode === "split"
               ? "Memorize the number!"
-              : "Memorize the positions!";
+              : mode === "rain"
+                ? "Memorize your numbers!"
+                : "Memorize the positions!";
         setStatus("");
         unlockAudio();
         cancelAnimationFrame(rafId);
@@ -6676,6 +6978,22 @@
           showRoundScore(completedRound);
           return;
         }
+        if (mode === "rain") {
+          rainDrops.forEach((d) => d.el.remove());
+          rainDrops = [];
+          const mine = "Your numbers: " + rainTargets.join(" · ");
+          if (reason === "win") {
+            playEffect("win");
+            showOverlay("🌧️ Caught them all!", mine, "New rain");
+          } else {
+            playEffect("wrong");
+            showOverlay(reason === "time" ? "⏱ Time’s up!" : "💔 Out of lives", mine, "New rain");
+          }
+          refs.analysis.hidden = true;
+          refs.analysisJump.hidden = true;
+          showRoundScore(completedRound);
+          return;
+        }
         if (mode === "split") {
           splitRefresh();
           const answer = `${splitValue} → ${splitPairs.join(" · ")} (${SPLIT_RULES[splitRule].label.toLowerCase()})`;
@@ -6853,8 +7171,12 @@
         refs.linksBoard.toggleAttribute("hidden", mode !== "links");
         refs.digitBoard.toggleAttribute("hidden", mode !== "digits");
         $("splitBoard").toggleAttribute("hidden", mode !== "split");
+        $("rainBoard").toggleAttribute("hidden", mode !== "rain");
         if (mode === "digits") {
           refs.wheel.replaceChildren();
+        } else if (mode === "rain") {
+          refs.wheel.replaceChildren();
+          rainReset();
         } else if (mode === "split") {
           refs.wheel.replaceChildren();
           splitReset();
@@ -6882,9 +7204,11 @@
                   ? "Sequence Recall 🔟"
                   : mode === "split"
                     ? "Split ✂️"
-                    : mode === "category"
-                      ? currentCategoryLabel() + " Match 🧩"
-                      : "Number Focus 🔢",
+                    : mode === "rain"
+                      ? "Rain 🌧️"
+                      : mode === "category"
+                        ? currentCategoryLabel() + " Match 🧩"
+                        : "Number Focus 🔢",
           quickIntro(),
           mode === "speed"
             ? `Start ${limitSecs()}-second round`
@@ -6911,6 +7235,7 @@
           ["digits", "digitMode"],
           ["speed", "speedMode"],
           ["split", "splitMode"],
+          ["rain", "rainMode"],
         ]) {
           const active = name === mode;
           $(id).classList.toggle("active", active);
@@ -6926,26 +7251,32 @@
                 ? "Unlocked"
                 : mode === "links"
                   ? "Matched"
-                  : "Found";
+                  : mode === "rain"
+                    ? "Caught"
+                    : "Found";
         refs.nextLabel.textContent =
-          mode === "split"
-            ? "Pairs"
-            : mode === "digits"
-              ? "Recall"
-              : mode === "speed"
-                ? "Find target"
-                : mode === "links"
-                  ? "Connect"
-                  : mode === "pattern"
-                    ? "Lock"
-                    : mode === "category"
-                      ? "Find item"
-                      : mode === "focus" && focusReverse
-                        ? "Reverse of"
-                        : "Find number";
+          mode === "rain"
+            ? "Catch"
+            : mode === "split"
+              ? "Pairs"
+              : mode === "digits"
+                ? "Recall"
+                : mode === "speed"
+                  ? "Find target"
+                  : mode === "links"
+                    ? "Connect"
+                    : mode === "pattern"
+                      ? "Lock"
+                      : mode === "category"
+                        ? "Find item"
+                        : mode === "rain"
+                          ? "Catch"
+                          : mode === "focus" && focusReverse
+                            ? "Reverse of"
+                            : "Find number";
         refs.next.classList.toggle(
           "target-word",
-          ["category", "pattern", "links", "digits", "speed", "split"].includes(mode),
+          ["category", "pattern", "links", "digits", "speed", "split", "rain"].includes(mode),
         );
         if (mode === "focus") refs.instructions.textContent = "Find numbers 1–50.";
         else if (mode === "category")
@@ -7129,6 +7460,7 @@
         ["digits", "digitMode"],
         ["speed", "speedMode"],
         ["split", "splitMode"],
+        ["rain", "rainMode"],
       ])
         $(id).addEventListener("click", () => changeMode(name));
       refs.linksBoard.addEventListener("pointerdown", linksDown);
@@ -7140,6 +7472,15 @@
       refs.linksLength.addEventListener("change", () => {
         linksLength = Number(refs.linksLength.value);
         updateLevelUi();
+        resetGame();
+      });
+      $("rainTargetsSelect").addEventListener("change", (e) => {
+        rainTargetsCount = Number(e.target.value);
+        resetGame();
+      });
+      $("rainSpeedSelect").addEventListener("change", (e) => {
+        rainFallSec = Number(e.target.value);
+        rainSpawnMs = Math.round(rainFallSec * 190);
         resetGame();
       });
       $("splitDigitsSelect").addEventListener("change", (e) => {
@@ -7285,6 +7626,7 @@
         links: "🔗 Number Links",
         digits: "🔟 Sequence Recall",
         split: "✂️ Split",
+        rain: "🌧️ Rain",
         speed: "🎯 Speed Target",
         coop: "🤝 Numbers Co-op",
         focus: "🔢 Numbers",
@@ -7440,6 +7782,7 @@
         renderProfileSummary();
       }
       function difficultyName() {
+        if (mode === "rain") return `${rainTargetsCount} numbers · ${rainFallSec}s fall · goal ${rainGoal}`;
         if (mode === "split")
           return `${splitDigits} digits · ${splitOptions.length} choices${splitOrdered ? " · in order" : ""}`;
         if (mode === "speed")
@@ -7757,7 +8100,35 @@
         t2: time,
         t3: Math.round(time * 0.5),
       }));
-      const LEVEL_GAMES = ["focus", "category", "pattern", "links", "digits", "speed", "split"];
+      LEVEL_LADDERS.rain = [
+        // remember, fall time (s), spawn every (ms), target share, trap share, catch goal, time (s), look (s)
+        [2, 6, 1100, 0.4, 0.2, 6, 40, 4],
+        [2, 5.5, 1000, 0.35, 0.4, 8, 40, 3],
+        [3, 5.5, 950, 0.35, 0.4, 8, 40, 4],
+        [3, 5, 900, 0.3, 0.6, 10, 40, 4],
+        [3, 4.5, 800, 0.3, 0.7, 12, 45, 3],
+        [4, 4.5, 800, 0.3, 0.7, 12, 45, 4],
+        [4, 4, 700, 0.28, 0.8, 14, 45, 4],
+        [4, 3.6, 650, 0.28, 0.85, 15, 45, 3],
+        [5, 3.6, 650, 0.26, 0.85, 15, 45, 5],
+        [5, 3.2, 600, 0.26, 0.9, 16, 50, 4],
+        [6, 3.2, 550, 0.25, 0.9, 18, 50, 5],
+        [6, 2.8, 500, 0.25, 1, 20, 50, 4],
+      ].map(([targets, fall, spawn, share, trap, goal, time, preview]) => ({
+        targets,
+        fall,
+        spawn,
+        share,
+        trap,
+        goal,
+        time,
+        preview,
+        t2: time,
+        t3: time,
+        m2: 2,
+        m3: 0,
+      }));
+      const LEVEL_GAMES = ["focus", "category", "pattern", "links", "digits", "speed", "split", "rain"];
       // Bump a game's version whenever its ladder changes meaning; older rounds are then archived.
       const LADDER_VERSION = { pattern: 2, speed: 3, split: 2 };
       function ladderVersion(game) {
@@ -7840,6 +8211,7 @@
         digits: [0.7, 0.5],
       };
       function coinTargets(game, L) {
+        if (game === "rain") return [{ lives: 1 }, { lives: 0 }];
         if (game === "speed")
           return [
             { hits: L.goal, misses: 1 },
@@ -7863,6 +8235,7 @@
         if (!L || !isPassed(r)) return 0;
         const [c2, c3] = coinTargets(game, L);
         const meets = (c) => {
+          if (game === "rain") return (Number(r.mistakes) || 0) <= c.lives;
           if (game === "speed")
             return (Number(r.found) || 0) >= c.hits && (Number(r.misses ?? r.mistakes) || 0) <= c.misses;
           const t = (Number(r.elapsedMs) || 0) / 1000,
@@ -7910,14 +8283,18 @@
       function coinTargetText(game, L) {
         const [c2, c3] = coinTargets(game, L);
         const fmt = (c) =>
-          game === "speed"
-            ? `${c.hits} hits${c.misses ? " · ≤ 1 miss" : " · no misses"}`
-            : `≤ ${c.time}s` +
-              (c.mistakes === undefined
-                ? ""
-                : c.mistakes
-                  ? ` · ≤ ${c.mistakes} mistake${c.mistakes === 1 ? "" : "s"}`
-                  : " · no mistakes");
+          game === "rain"
+            ? c.lives
+              ? "lose at most 1 ❤️"
+              : "lose no ❤️"
+            : game === "speed"
+              ? `${c.hits} hits${c.misses ? " · ≤ 1 miss" : " · no misses"}`
+              : `≤ ${c.time}s` +
+                (c.mistakes === undefined
+                  ? ""
+                  : c.mistakes
+                    ? ` · ≤ ${c.mistakes} mistake${c.mistakes === 1 ? "" : "s"}`
+                    : " · no mistakes");
         return [fmt(c2), fmt(c3)];
       }
 
@@ -8065,6 +8442,8 @@
             .join(" · ");
         if (game === "links") return `${L.length} links · ${L.preview}s to look`;
         if (game === "digits") return `${L.length} ${KIND_LABELS[L.kind]} · ${L.preview}s to look`;
+        if (game === "rain")
+          return `${L.targets} numbers · ${L.fall}s fall · catch ${L.goal} · ${L.preview}s look`;
         if (game === "split")
           return `${L.digits} digits · ${L.preview}s to look${L.rules.length > 1 ? " · rule after" : ""}${L.ordered ? " · in order" : ""}`;
         if (game === "speed")
@@ -8080,12 +8459,14 @@
           return `${h2} correct taps · ≤ 1 miss`;
         }
         if (game === "focus" || game === "category") return `Finish in ≤ ${L.t2}s · ${mistakes(L.m2)}`;
+        if (game === "rain") return `Catch ${L.goal} of your numbers before 3 ❤️ are gone`;
         if (game === "split")
           return `All pairs${L.ordered ? " in order" : ""} · ${L.m2 ? "≤ " + L.m2 + " wrong tap" : "no wrong taps"}`;
         return `${game === "pattern" && L.backward ? "Correct, backwards," : "Correct"} in ≤ ${L.t2}s`;
       }
       function roundOutcomeText(r) {
         const secs = ((Number(r.elapsedMs) || 0) / 1000).toFixed(1);
+        if (r.game === "rain") return `You: caught ${r.found} of ${r.count} · lost ${r.mistakes} ❤️`;
         if (r.game === "split")
           return `You: ${r.found} of ${r.count} pairs · ${r.mistakes} wrong tap${r.mistakes === 1 ? "" : "s"}`;
         if (r.game === "speed")
@@ -8112,6 +8493,7 @@
         if (r.outcome !== "win") return 0;
         const t = (Number(r.elapsedMs) || 0) / 1000,
           m = Number(r.mistakes) || 0;
+        if (game === "rain") return m === 0 ? 3 : 2; // any win (lives left) passes
         if (game === "focus" || game === "category" || game === "split") {
           if (t <= L.t3 && m <= L.m3) return 3;
           if (t <= L.t2 && m <= L.m2) return 2;
@@ -8191,6 +8573,14 @@
           digitAnswerMs = L.answer * 1000;
           refs.digitAnswerTime.value = String(L.answer);
           syncDigitSettings();
+        } else if (game === "rain") {
+          rainTargetsCount = L.targets;
+          $("rainTargetsSelect").value = String(L.targets);
+          rainFallSec = L.fall;
+          rainSpawnMs = L.spawn;
+          rainShare = L.share;
+          rainTrap = L.trap;
+          rainGoal = L.goal;
         } else if (game === "split") {
           splitDigits = L.digits;
           $("splitDigitsSelect").value = String(L.digits);
@@ -8237,6 +8627,9 @@
         if (practice) {
           splitAllowed = Infinity;
           splitConfuse = 0.8;
+          rainGoal = 12;
+          rainShare = 0.3;
+          rainTrap = 0.7;
           splitRules = ["normal", "flip", "shift"];
           updateLevelUi();
           resetGame();
@@ -8507,6 +8900,7 @@
         ["digits", "digitMode"],
         ["speed", "speedMode"],
         ["split", "splitMode"],
+        ["rain", "rainMode"],
       ];
       // ------- Challenges: a code = an ordered list of (game, level) steps + a seed -------
       // Same code ⇒ the same boards for everyone: while a challenge step builds its board, Math.random
@@ -8520,6 +8914,7 @@
         digits: "D",
         speed: "T",
         split: "S",
+        rain: "R",
       };
       const CHALLENGE_GAMES = Object.fromEntries(Object.entries(CHALLENGE_LETTERS).map(([g, l]) => [l, g]));
       const CHALLENGE_MAX_STEPS = 8,
