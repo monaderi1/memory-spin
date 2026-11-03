@@ -2809,6 +2809,33 @@
           animation: none;
         }
       }
+      /* Numbers · Triple rings: circles only, with the usual cell states shown on the circle. */
+      .board-shell.ring-layout .cell path {
+        fill: transparent !important;
+        stroke: none;
+        filter: none !important;
+      }
+      .board-shell.ring-layout .ring-band {
+        display: none;
+      }
+      .board-shell.ring-layout .cell.done .num-badge {
+        fill: #b4ebce;
+        stroke: #7fcfa6;
+      }
+      .board-shell.ring-layout .cell.wrong .num-badge {
+        fill: #ffa198;
+      }
+      .board-shell.ring-layout .cell.system-finding .num-badge {
+        fill: #b5dafa;
+        stroke: #5c9fd0;
+      }
+      .board-shell.ring-layout .cell.done.system-done .num-badge {
+        fill: #91c5ec;
+      }
+      .board-shell.ring-layout .cell.cleared .num-badge {
+        fill: #22324a;
+        stroke: #22324a;
+      }
       .board-shell.speed-numbers .ring-sep {
         display: none;
       }
@@ -5676,8 +5703,20 @@
             });
             g.appendChild(svg("path", { d: ringSlicePath(cfg.inner, cfg.outer, start, end) }));
             const tp = polar((cfg.inner + cfg.outer) / 2, mid);
+            // Same look as Target: a circle per number; the wedge stays as an invisible tap area.
+            const arc = (Math.PI * (cfg.inner + cfg.outer)) / cfg.count;
+            const rad = Math.min((cfg.outer - cfg.inner) * 0.48, arc * 0.42, 36);
+            g.appendChild(
+              svg("circle", {
+                class: "num-badge",
+                cx: tp.x.toFixed(2),
+                cy: tp.y.toFixed(2),
+                r: rad.toFixed(1),
+              }),
+            );
             const t = svg("text", { x: tp.x.toFixed(2), y: tp.y.toFixed(2) });
             t.textContent = item.icon;
+            t.style.fontSize = Math.round(rad * 0.92) + "px";
             g.appendChild(t);
             attachCellHandlers(g, key);
             ring.appendChild(g);
