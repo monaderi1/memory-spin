@@ -3246,6 +3246,14 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
+      /* Target words: inner rings are narrow — keep words clear of the centre badge. */
+      .board-shell.speed-layout.word-content .cell.middle text {
+        font-size: 21px;
+      }
+      .board-shell.speed-layout.word-content .cell.inner text {
+        font-size: 15px;
+        letter-spacing: -0.3px;
+      }
       /* ---------- Rain ---------- */
       .board-shell[data-mode="rain"] .board-rotor {
         display: none;
@@ -6415,8 +6423,20 @@
           word: "Words",
         }[speedCategory];
       }
+      // Target words: each round is built from whole look-alike families (10 visible = 2 families,
+      // 15 = 3), so the word you're looking for always shares the ring with near-identical words.
+      let speedWordSet = [];
+      function buildSpeedWordSet() {
+        const n = speedVisibleCount;
+        speedWordSet = shuffle([...WORD_FAMILIES])
+          .slice(0, Math.ceil(n / 5))
+          .flatMap((f) => shuffle([...f]))
+          .slice(0, n)
+          .map((w) => ({ icon: w, name: w[0] + w.slice(1).toLowerCase(), word: true }));
+      }
       function speedItems() {
-        return { fruit: FRUITS, animal: ANIMALS, flag: FLAGS, word: WORDS }[speedCategory] || null;
+        if (speedCategory === "word") return speedWordSet;
+        return { fruit: FRUITS, animal: ANIMALS, flag: FLAGS }[speedCategory] || null;
       }
       function speedItem(key) {
         return speedCategory === "number"
@@ -6637,6 +6657,7 @@
         return mode === "speed" && (level ? level.noise >= 0.35 : speedNoise > 0);
       }
       function drawSpeedBoard() {
+        if (speedCategory === "word") buildSpeedWordSet();
         const values = shuffle(Array.from({ length: currentItemCount() }, (_, i) => i + 1));
         refs.wheel.replaceChildren();
         tiles = [];
