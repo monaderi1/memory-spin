@@ -3026,6 +3026,11 @@
         margin: 4px 0 0;
         color: #cfe0f5;
       }
+      .ch-join-note {
+        margin: 0;
+        font-size: 12px;
+        color: #ffe08a;
+      }
       .ch-error {
         color: #ffaaa3;
         font-size: 12px;
@@ -4022,6 +4027,9 @@
               spellcheck="false"
             /><button class="primary" type="button" id="challengeJoin">Start ▶</button>
           </div>
+          <p class="ch-join-note" id="challengeJoinNote" hidden>
+            You were invited to this challenge. Pick your player (⚙ at the top), then press Start.
+          </p>
           <p class="ch-error" id="challengeError" hidden>That code isn't valid. Check letters and numbers.</p>
         </section>
         <section class="ch-card">
@@ -8604,6 +8612,23 @@
         }
         return runs.sort((a, b) => b.passed - a.passed || a.seconds - b.seconds);
       }
+      // Hosted (http/https): share a link that opens the game with the code filled in.
+      // Opened as a local file: share the bare code, so it can be copied in one go.
+      function challengeShareable(code) {
+        return /^https?:$/.test(location.protocol)
+          ? location.origin + location.pathname + "#c=" + code
+          : code;
+      }
+      function joinFromLink() {
+        const m = location.hash.match(/^#c=([A-Za-z0-9-]+)$/);
+        if (!m) return;
+        const parsed = parseChallenge(m[1]);
+        history.replaceState(null, "", location.pathname + location.search);
+        if (!parsed) return;
+        goToScreen("challenge");
+        $("challengeCodeInput").value = parsed.code;
+        $("challengeJoinNote").hidden = false;
+      }
       function challengeShareText(code, run) {
         return `Memory Spin challenge ${code}: ${run.passed}/${run.total} passed · ${run.seconds.toFixed(1)}s. Can you beat it?`;
       }
@@ -8790,12 +8815,14 @@
           const code = encodeChallenge(newSeed(), challengeDraft);
           $("challengeMadeCode").textContent = code;
           $("challengeMade").hidden = false;
+          $("challengeCopy").textContent = "Share code";
           $("challengeCodeInput").value = code;
         });
         $("challengeCopy").addEventListener("click", async (e) => {
+          const button = e.currentTarget; // currentTarget is null after the await
           const code = $("challengeMadeCode").textContent;
-          const msg = await shareOrCopy(`Play my Memory Spin challenge: ${code}`);
-          if (msg) e.currentTarget.textContent = msg + " ✓";
+          const msg = await shareOrCopy(challengeShareable(code));
+          if (msg) button.textContent = msg + " ✓";
         });
         $("challengePlayMade").addEventListener("click", () =>
           startChallenge(parseChallenge($("challengeMadeCode").textContent)),
@@ -9289,6 +9316,7 @@
       preloadAnimalSounds();
       bindLevelUi();
       bindChallengeUi();
+      joinFromLink();
       setPlayType(false);
       renderProfileSummary();
 
