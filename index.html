@@ -5315,7 +5315,7 @@
         return (CATEGORY_SETS[categorySet] || CATEGORY_SETS.fruit).noun;
       }
       function isFocusRings() {
-        return mode === "focus" && focusLayout === "rings" && !focusReverse;
+        return mode === "focus" && focusLayout === "rings";
       }
       function shuffle(a) {
         for (let i = a.length - 1; i > 0; i--) {
@@ -5671,10 +5671,11 @@
       function drawRingBoard() {
         const values = shuffle(itemKeys());
         // Put only 6 numbers in the inner ring, so each tap target is thumb-sized.
-        // Total: 26 outer + 18 middle + 6 inner = 50.
+        // 50 numbers: 26 outer + 18 middle + 6 inner. Reverse (40 numbers): 20 + 14 + 6.
+        const big = values.length > 40;
         const configs = [
-          { count: 26, inner: 208, outer: 292, duration: 30, reverse: false, cls: "outer" },
-          { count: 18, inner: 132, outer: 201, duration: 24, reverse: true, cls: "middle" },
+          { count: big ? 26 : 20, inner: 208, outer: 292, duration: 30, reverse: false, cls: "outer" },
+          { count: big ? 18 : 14, inner: 132, outer: 201, duration: 24, reverse: true, cls: "middle" },
           { count: 6, inner: 26, outer: 125, duration: 20, reverse: false, cls: "inner" },
         ];
         refs.wheel.replaceChildren();
@@ -7148,13 +7149,13 @@
           { spin: true, spinSpeed: 2, layout: "mosaic", t3: 90, t2: 105, m3: 1, m2: 4 },
           { spin: true, layout: "rings", t3: 110, t2: 135, m3: 1, m2: 4 },
           { spin: true, spinSpeed: 3, layout: "mosaic", t3: 75, t2: 90, m3: 1, m2: 3 },
-          // 11–16: reverse — see 15, tap 51 (40 numbers, mosaic only).
+          // 11–16: reverse — see 15, tap 51 (40 numbers), alternating mosaic and rings.
           { reverse: true, spin: false, layout: "mosaic", clear: true, t3: 100, t2: 150, m3: 2, m2: 6 },
-          { reverse: true, spin: false, layout: "mosaic", t3: 100, t2: 150, m3: 2, m2: 5 },
+          { reverse: true, spin: false, layout: "rings", t3: 100, t2: 150, m3: 2, m2: 5 },
           { reverse: true, spin: true, spinSpeed: 1, layout: "mosaic", t3: 100, t2: 150, m3: 2, m2: 5 },
-          { reverse: true, spin: true, spinSpeed: 2, layout: "mosaic", t3: 90, t2: 130, m3: 1, m2: 4 },
+          { reverse: true, spin: true, layout: "rings", t3: 90, t2: 130, m3: 1, m2: 4 },
           { reverse: true, spin: true, spinSpeed: 3, layout: "mosaic", t3: 85, t2: 120, m3: 1, m2: 3 },
-          { reverse: true, spin: true, spinSpeed: 3, layout: "mosaic", t3: 75, t2: 110, m3: 0, m2: 2 },
+          { reverse: true, spin: true, layout: "rings", t3: 75, t2: 110, m3: 0, m2: 2 },
         ],
         category: [
           { set: "number", count: 3, preview: 5, spin: false, time: 20 },
@@ -7377,7 +7378,8 @@
       function levelSummary(game, L) {
         if (game === "focus")
           return [
-            L.reverse ? "⇄ Reverse 15→51" : L.layout === "rings" ? "Triple rings" : "Mosaic",
+            L.reverse ? "⇄ Reverse 15→51" : "",
+            L.layout === "rings" ? "Triple rings" : "Mosaic",
             L.spin ? "spinning" : "still",
             L.clear ? "found clear" : "",
             `${L.time}s`,
