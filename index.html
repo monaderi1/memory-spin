@@ -3312,6 +3312,135 @@
           opacity: 0;
         }
       }
+      #rainSky {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+      }
+      .cloud {
+        position: absolute;
+        top: 7%;
+        height: 9%;
+        border-radius: 999px;
+        background: linear-gradient(#a7b9d6, #6c82a6);
+        filter: drop-shadow(0 6px 8px #0008);
+        opacity: 0.95;
+        animation: cloudDrift 22s ease-in-out infinite alternate;
+      }
+      .cloud::before,
+      .cloud::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+      }
+      .cloud::before {
+        width: 46%;
+        height: 170%;
+        left: 14%;
+        top: -95%;
+        background: radial-gradient(circle at 42% 35%, #c3d1e8, #8a9fc2 70%, #7489ad);
+      }
+      .cloud::after {
+        width: 34%;
+        height: 130%;
+        left: 52%;
+        top: -62%;
+        background: radial-gradient(circle at 40% 35%, #bccbe4, #8399bd 70%, #7086aa);
+      }
+      .cloud.c1 {
+        left: 6%;
+        width: 40%;
+      }
+      .cloud.c2 {
+        left: 36%;
+        width: 34%;
+        top: 3%;
+        animation-duration: 28s;
+        animation-direction: alternate-reverse;
+      }
+      .cloud.c3 {
+        left: 60%;
+        width: 36%;
+        animation-duration: 19s;
+      }
+      @keyframes cloudDrift {
+        from {
+          transform: translateX(-6%);
+        }
+        to {
+          transform: translateX(8%);
+        }
+      }
+      #rainBolt {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        pointer-events: none;
+        opacity: 0;
+      }
+      #rainBolt polyline {
+        fill: none;
+        stroke: #fff6c2;
+        stroke-width: 1.1;
+        stroke-linejoin: round;
+        filter: drop-shadow(0 0 2px #ffe680) drop-shadow(0 0 5px #a9c8ff);
+      }
+      #rainBolt.strike {
+        animation: boltShow 0.42s linear;
+      }
+      @keyframes boltShow {
+        0%,
+        40% {
+          opacity: 1;
+        }
+        55% {
+          opacity: 0;
+        }
+        70% {
+          opacity: 0.85;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+      /* Soft flash, at most 2 pulses per strike and ≥4 s between strikes (photosensitivity-safe). */
+      #rainFlash {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background: #dfe9ff;
+        opacity: 0;
+      }
+      #rainFlash.strike {
+        animation: rainFlash 0.42s linear;
+      }
+      @keyframes rainFlash {
+        0% {
+          opacity: 0.32;
+        }
+        30% {
+          opacity: 0;
+        }
+        60% {
+          opacity: 0.18;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .cloud {
+          animation: none;
+        }
+        #rainFlash.strike,
+        #rainBolt.strike {
+          animation: none;
+        }
+      }
       #rainStudy {
         position: absolute;
         inset: 0;
@@ -3715,6 +3844,13 @@
             </svg>
             <div id="rainBoard" hidden aria-label="Tap your numbers as they fall">
               <div id="rainField"></div>
+              <div id="rainSky" aria-hidden="true">
+                <span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span>
+              </div>
+              <svg id="rainBolt" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                <polyline id="rainBoltLine" points="" />
+              </svg>
+              <div id="rainFlash" aria-hidden="true"></div>
               <div id="rainStudy" hidden>
                 <span class="digit-small">REMEMBER YOUR NUMBERS</span>
                 <div id="rainStudyNumbers"></div>
@@ -5620,7 +5756,34 @@
         rainDrops = [],
         rainNextSpawn = 0,
         rainLastT = 0,
-        rainSerial = 0;
+        rainSerial = 0,
+        rainStorm = false,
+        rainBoltAt = 0;
+      // Lightning is a distraction on harder levels. Timing and shape use vrand, so it never changes
+      // a challenge's (seeded) rain.
+      function rainLightning() {
+        const x0 = 15 + vrand() * 70;
+        let x = x0,
+          y = 12;
+        const pts = [`${x},${y}`];
+        while (y < 55 + vrand() * 30) {
+          x += (vrand() - 0.5) * 14;
+          y += 6 + vrand() * 8;
+          pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+        }
+        $("rainBoltLine").setAttribute("points", pts.join(" "));
+        for (const id of ["rainBolt", "rainFlash"]) {
+          const n = $(id);
+          n.classList.remove("strike");
+          void n.getBoundingClientRect();
+          n.classList.add("strike");
+        }
+        if (soundEnabled && audioContext) {
+          const t = audioContext.currentTime + 0.25 + vrand() * 0.3;
+          noiseBurst(t, 1.3, 0.22, 140);
+          noiseBurst(t + 0.15, 0.9, 0.12, 260);
+        }
+      }
       const RAIN_LIVES = 3;
       function rainRandomNumber() {
         return String(11 + Math.floor(Math.random() * 89));
@@ -5640,6 +5803,7 @@
         rainDrops = [];
         rainNextSpawn = 0;
         rainLastT = 0;
+        rainBoltAt = 0;
         $("rainStudyNumbers").replaceChildren(
           ...rainTargets.map((n) => {
             const s = document.createElement("span");
@@ -5724,6 +5888,10 @@
         const t = now - startedAt,
           dt = Math.max(0, t - rainLastT);
         rainLastT = t;
+        if (rainStorm && t >= rainBoltAt) {
+          if (rainBoltAt) rainLightning();
+          rainBoltAt = t + 4000 + vrand() * 5000;
+        }
         if (t >= rainNextSpawn) {
           rainSpawn();
           rainNextSpawn = t + rainSpawnMs;
@@ -7480,6 +7648,7 @@
       });
       $("rainSpeedSelect").addEventListener("change", (e) => {
         rainFallSec = Number(e.target.value);
+        rainStorm = rainFallSec <= 3.2;
         rainSpawnMs = Math.round(rainFallSec * 190);
         resetGame();
       });
@@ -8114,7 +8283,8 @@
         [5, 3.2, 600, 0.26, 0.9, 16, 50, 4],
         [6, 3.2, 550, 0.25, 0.9, 18, 50, 5],
         [6, 2.8, 500, 0.25, 1, 20, 50, 4],
-      ].map(([targets, fall, spawn, share, trap, goal, time, preview]) => ({
+      ].map(([targets, fall, spawn, share, trap, goal, time, preview], i) => ({
+        storm: i + 1 >= 7,
         targets,
         fall,
         spawn,
@@ -8443,7 +8613,7 @@
         if (game === "links") return `${L.length} links · ${L.preview}s to look`;
         if (game === "digits") return `${L.length} ${KIND_LABELS[L.kind]} · ${L.preview}s to look`;
         if (game === "rain")
-          return `${L.targets} numbers · ${L.fall}s fall · catch ${L.goal} · ${L.preview}s look`;
+          return `${L.targets} numbers · ${L.fall}s fall · catch ${L.goal}${L.storm ? " · ⚡ storm" : ""}`;
         if (game === "split")
           return `${L.digits} digits · ${L.preview}s to look${L.rules.length > 1 ? " · rule after" : ""}${L.ordered ? " · in order" : ""}`;
         if (game === "speed")
@@ -8581,6 +8751,7 @@
           rainShare = L.share;
           rainTrap = L.trap;
           rainGoal = L.goal;
+          rainStorm = !!L.storm;
         } else if (game === "split") {
           splitDigits = L.digits;
           $("splitDigitsSelect").value = String(L.digits);
