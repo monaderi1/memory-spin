@@ -30,6 +30,14 @@ Progress is measured as *highest level passed*. The old 0–1,000 score across m
 
 When a ladder's meaning changes, its version (`LADDER_VERSION`) is raised and older rounds for that game are archived. The ladders and pass conditions are defined in `LEVEL_LADDERS` inside `index.html`. They are first estimates and should be tuned after real play-testing.
 
+## Challenges
+
+Build a challenge from any games and levels (up to 8 steps) and get a short code such as `7QX2-P7T5S3` (seed + one letter per game and its level). Anyone who enters the same code gets **exactly the same boards**: while a challenge step runs, the game's random choices come from a generator seeded by the code and step (visual effects use separate randomness).
+
+- One attempt per step; challenge rounds never count toward levels or coins.
+- Ranking: steps passed, then total time with +5 s per mistake.
+- On one shared phone, each player picks their own profile; the result screen shows that phone's ranking for the code.
+
 ## Profiles and results
 
 Profiles and history are stored locally in the browser. Data is not shared between different browser origins, including different local file URLs. Use **Export Backup / Import Backup** under Profiles when moving the file or changing devices.
