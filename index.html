@@ -5957,8 +5957,33 @@
           "🇿🇦": "green",
         },
       };
+      // Look-alike word families (same length, 1–2 letters apart). A target's trap comes from its own
+      // family first: RAIN → RAIL, RAID, REIN, RUIN. Targets are drawn from different families.
+      const WORD_FAMILIES = [
+        ["RAIN", "RAIL", "RAID", "REIN", "RUIN"],
+        ["STAR", "STIR", "SCAR", "STAY", "SOAR"],
+        ["MILK", "MILL", "MILE", "MILD", "MINK"],
+        ["BOOK", "BOOT", "BOOM", "LOOK", "COOK"],
+        ["LAMP", "LAMB", "LIMP", "LUMP", "DAMP"],
+        ["FISH", "DISH", "WISH", "FIST", "FIRM"],
+        ["BALL", "BELL", "BILL", "BULL", "HALL"],
+        ["CAKE", "LAKE", "CAVE", "CAGE", "CAME"],
+        ["BOAT", "COAT", "GOAT", "BEAT", "BOLT"],
+        ["LEAF", "LEAD", "LEAK", "LEAN", "LOAF"],
+        ["BIRD", "BIND", "BAND", "BEND", "BOND"],
+        ["SNOW", "SHOW", "SLOW", "STOW", "GLOW"],
+        ["ROAD", "LOAD", "TOAD", "ROAM", "READ"],
+        ["WIND", "WILD", "MIND", "WINE", "KIND"],
+        ["DOOR", "POOR", "MOOR", "DOOM", "DEER"],
+        ["TREE", "FREE", "TRUE", "TREK", "TRAY"],
+        ["FIRE", "FIVE", "FILE", "HIRE", "WIRE"],
+        ["SAND", "SEND", "SAID", "HAND", "LAND"],
+        ["GOLD", "COLD", "HOLD", "GOAL", "FOLD"],
+        ["RING", "KING", "RANG", "RUNG", "WING"],
+      ];
+      const WORD_FAMILY_OF = new Map(WORD_FAMILIES.flatMap((f) => f.map((w) => [w, f])));
       function rainPool() {
-        if (rainKind === "word") return WORDS.map((w) => w.icon);
+        if (rainKind === "word") return WORD_FAMILIES.flat();
         if (rainKind === "fruit") return FRUITS.map((f) => f.icon);
         if (rainKind === "animal") return ANIMALS.map((a) => a.icon);
         if (rainKind === "flag") return FLAGS.map((f) => f.icon);
@@ -5979,8 +6004,12 @@
             String(Number(t) - 10),
           ].filter((c) => /^[1-9][0-9]$/.test(c));
         const pool = rainPool().filter((v) => v !== t);
-        if (rainKind === "word")
-          return pool.sort((a, b) => rainSimilarity(t, b) - rainSimilarity(t, a)).slice(0, 4);
+        if (rainKind === "word") {
+          const family = (WORD_FAMILY_OF.get(t) || []).filter((w) => w !== t);
+          return family.length
+            ? family
+            : pool.sort((a, b) => rainSimilarity(t, b) - rainSimilarity(t, a)).slice(0, 4);
+        }
         const tones = RAIN_TONES[rainKind] || {};
         return pool.filter((v) => tones[v] && tones[v] === tones[t]);
       }
@@ -5998,7 +6027,14 @@
           const ranked = shuffle([...pool]).sort(
             (a, b) => (rainTrapsFor(b).length ? 1 : 0) - (rainTrapsFor(a).length ? 1 : 0),
           );
-          for (const v of ranked) if (set.size < rainTargetsCount) set.add(v);
+          const usedFamilies = new Set();
+          for (const v of ranked) {
+            if (set.size >= rainTargetsCount) break;
+            const fam = WORD_FAMILY_OF.get(v);
+            if (fam && usedFamilies.has(fam)) continue; // one target per look-alike family
+            if (fam) usedFamilies.add(fam);
+            set.add(v);
+          }
         }
         while (!pool && set.size < rainTargetsCount && guard++ < 500) {
           const n = rainRandomNumber();
