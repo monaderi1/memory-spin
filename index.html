@@ -7698,17 +7698,20 @@
           <circle cx="50" cy="50" r="46.5" fill="none" stroke="${P.reed}" stroke-width="3.5" stroke-dasharray="1.3 1.7" opacity=".55"/>
           <circle cx="50" cy="50" r="43" fill="url(#${P.face})"/>
           <circle cx="50" cy="50" r="42" fill="none" stroke="url(#${P.bevel})" stroke-width="1.6"/>
-          ${
-            size >= 26
-              ? `<circle cx="50" cy="50" r="25" fill="none" stroke="${dim ? "#13203a" : "#b57d00"}" stroke-width="1.1" opacity=".8"/>
-          <circle cx="50" cy="50" r="24" fill="none" stroke="${P.hi}" stroke-width=".7" opacity=".7"/>`
-              : ""
-          }
+          ${(() => {
+            // Centre: an inner ring and an embossed serif "M" (light copy offset under a dark copy).
+            const big = size >= 26,
+              r = big ? 25 : 30;
+            const emboss = (x, y, fs, txt, extra = "") =>
+              `<text x="${x + 0.9}" y="${y + 1.1}" text-anchor="middle" dominant-baseline="central" font-size="${fs}"
+                 font-family="Georgia,'Times New Roman',serif" font-weight="700" fill="${P.hi}" opacity=".75"${extra}>${txt}</text>
+               <text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="${fs}"
+                 font-family="Georgia,'Times New Roman',serif" font-weight="700" fill="${P.lo}"${extra}>${txt}</text>`;
+            return `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${dim ? "#13203a" : "#b57d00"}" stroke-width="${big ? 1.1 : 2.2}" opacity=".85"/>
+              <circle cx="50" cy="50" r="${r - 1.2}" fill="none" stroke="${P.hi}" stroke-width="${big ? 0.7 : 1.2}" opacity=".7"/>
+              ${big ? emboss(50, 47, 28, "M") + emboss(50, 64, 8, "✦") : emboss(50, 51, 38, "M")}`;
+          })()}
           ${ring}
-          <text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-size="${size >= 26 ? 30 : 46}"
-            font-family="Georgia,serif" fill="${P.hi}" opacity=".75" transform="translate(1 1.2)">✦</text>
-          <text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-size="${size >= 26 ? 30 : 46}"
-            font-family="Georgia,serif" fill="${P.lo}">✦</text>
         </svg>`;
       }
       function coinEl(full, size = 18, extra = "") {
