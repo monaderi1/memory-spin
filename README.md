@@ -22,6 +22,8 @@ Every game has a fixed ladder of levels (9–14 per game). Each level pins all o
 
 - Each level has **one pass condition** (time, mistakes, or correct taps), shown before you start. Pass it and the next level unlocks; otherwise retry.
 - After a round you see what was needed and what you did, so you know how close you were.
+- **Coins**: a pass earns 🪙; clearly faster and cleaner earns 🪙🪙 or 🪙🪙🪙 (targets shown before the round). Only your best result per level counts, so replaying pays only when you improve.
+- **Coin gates**: levels 5, 9, 13 and 17 also need an average of 2 coins across all earlier levels. If you're short, replay earlier levels faster. A level you've passed never re-locks.
 - **Practice** keeps the free settings under ⚙ Options. Practice rounds are saved but never count toward levels or stars.
 
 Progress is measured as *highest level passed*. The old 0–1,000 score across mixed settings has been retired. Rounds recorded under the old scoring stay in storage and backups, but they are not charted.

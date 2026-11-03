@@ -2843,6 +2843,177 @@
       .board-shell.speed-numbers .cell.speed-miss path {
         fill: transparent;
       }
+      /* ---------- Coins ---------- */
+      .coin {
+        --cs: 18px;
+        display: inline-block;
+        flex: none;
+        width: var(--cs);
+        height: var(--cs);
+        border-radius: 50%;
+        position: relative;
+        vertical-align: middle;
+        overflow: hidden;
+      }
+      .coin.full {
+        background: radial-gradient(circle at 34% 30%, #fff7cf 0 10%, #ffe066 26%, #f4b400 62%, #b77a00 100%);
+        box-shadow:
+          inset 0 0 0 calc(var(--cs) * 0.08) #d99100,
+          inset 0 0 0 calc(var(--cs) * 0.15) #ffd84f,
+          0 calc(var(--cs) * 0.06) calc(var(--cs) * 0.18) #0009;
+      }
+      .coin.full::before {
+        content: "";
+        position: absolute;
+        inset: 27%;
+        border-radius: 50%;
+        border: calc(var(--cs) * 0.07) solid #c88a0099;
+        box-shadow: inset 0 calc(var(--cs) * 0.03) 0 #fff3b066;
+      }
+      .coin.full::after {
+        content: "";
+        position: absolute;
+        top: -30%;
+        left: -70%;
+        width: 38%;
+        height: 160%;
+        background: linear-gradient(90deg, transparent, #ffffffb0, transparent);
+        transform: rotate(24deg);
+        animation: coinShine 3.2s ease-in-out infinite;
+      }
+      .coin.empty {
+        background: radial-gradient(circle at 35% 30%, #23344f, #16233a);
+        box-shadow: inset 0 0 0 calc(var(--cs) * 0.09) #3a5273;
+      }
+      @keyframes coinShine {
+        0%,
+        55% {
+          left: -70%;
+        }
+        80%,
+        100% {
+          left: 130%;
+        }
+      }
+      @keyframes coinDrop {
+        0% {
+          opacity: 0;
+          transform: translateY(-42px) scale(0.4) rotateY(90deg);
+        }
+        55% {
+          opacity: 1;
+          transform: translateY(5px) scale(1.12) rotateY(0deg);
+        }
+        75% {
+          transform: translateY(-3px) scale(0.97);
+        }
+        100% {
+          transform: none;
+        }
+      }
+      @keyframes coinGlow {
+        0%,
+        100% {
+          filter: drop-shadow(0 0 0 #ffd54a00);
+        }
+        50% {
+          filter: drop-shadow(0 0 10px #ffd54acc);
+        }
+      }
+      .coin.drop {
+        animation: coinDrop 0.65s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+        animation-delay: var(--delay, 0ms);
+      }
+      .coin.drop.new {
+        animation:
+          coinDrop 0.65s cubic-bezier(0.3, 1.4, 0.5, 1) both var(--delay, 0ms),
+          coinGlow 1.2s ease-in-out calc(var(--delay, 0ms) + 650ms) 2;
+      }
+      .coin-row {
+        display: inline-flex;
+        gap: 3px;
+        align-items: center;
+      }
+      .mode-stat-card .mode-figures strong.coin-figure {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: #ffe08a;
+      }
+      .coin-total {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .coin-total b {
+        color: #ffe08a;
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+      }
+      .coin-total small {
+        color: #a9bdd8;
+        font-size: 10px;
+      }
+      .coin-result {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 4px;
+      }
+      .coin-result .coin-row {
+        gap: 8px;
+      }
+      .coin-result .coin-label {
+        font-size: 12px;
+        color: #ffe08a;
+        font-weight: 750;
+      }
+      .coin-goals {
+        display: grid;
+        gap: 2px;
+        margin-top: 4px;
+        font-size: 11px;
+        color: #d6e6f5;
+        font-weight: 600;
+      }
+      .coin-goals span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        justify-content: center;
+      }
+      .gate-note {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        justify-content: center;
+        margin-top: 6px;
+        font-size: 12px;
+        color: #ffe08a;
+        font-weight: 700;
+      }
+      .level-tile .coin-row {
+        margin: 1px 0;
+      }
+      .level-tile.gated small.gate {
+        color: #ffe08a;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        justify-content: center;
+      }
+      #playBest {
+        display: inline-flex;
+        align-items: center;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .coin.full::after,
+        .coin.drop,
+        .coin.drop.new {
+          animation: none;
+        }
+      }
       /* ---------- Board animations ---------- */
       .cell text {
         transform-box: fill-box;
@@ -7361,12 +7532,17 @@
         return n;
       }
       function isUnlocked(game, n) {
-        return n === 1 || passedLevels(game).has(n - 1);
+        if (n === 1 || passedLevels(game).has(n)) return true; // a level you've passed never re-locks
+        if (!passedLevels(game).has(n - 1)) return false;
+        const gate = gateInfo(game, n);
+        return !gate || gate.ok;
       }
       function currentLevelNumber(game = mode) {
         const max = ladder(game).length;
         if (selectedLevel[game]) return selectedLevel[game];
-        return Math.min(max, highestPassed(game) + 1);
+        let n = Math.min(max, highestPassed(game) + 1);
+        while (n > 1 && !isUnlocked(game, n)) n--; // a closed coin gate: stay on the last open level
+        return n;
       }
       function activeLevel() {
         if (practiceMode || !LEVEL_LADDERS[mode]) return null;
@@ -7374,6 +7550,126 @@
       }
       function passMark(game, n) {
         return passedLevels(game).has(n) ? "✓" : "";
+      }
+      // ------- Coins: 1–3 per level, best result counts (no farming), gates every 4 levels -------
+      // 🪙 = pass. 🪙🪙 / 🪙🪙🪙 = clearly faster and cleaner. Replaying only pays if you beat your best.
+      const COIN_SPEED = {
+        focus: [0.8, 0.65],
+        category: [0.7, 0.5],
+        split: [0.7, 0.5],
+        pattern: [0.7, 0.5],
+        links: [0.7, 0.5],
+        digits: [0.7, 0.5],
+      };
+      function coinTargets(game, L) {
+        if (game === "speed")
+          return [
+            { hits: L.goal, misses: 1 },
+            { hits: Math.ceil(L.goal * 1.25), misses: 0 },
+          ];
+        const [f2, f3] = COIN_SPEED[game] || [0.7, 0.5];
+        const timed = (f) => Math.max(1, Math.floor(L.t2 * f));
+        if (game === "focus")
+          return [
+            { time: timed(f2), mistakes: Math.floor(L.m2 / 2) },
+            { time: timed(f3), mistakes: Math.min(1, L.m2) },
+          ];
+        if (game === "category" || game === "split")
+          return [
+            { time: timed(f2), mistakes: Math.floor(L.m2 / 2) },
+            { time: timed(f3), mistakes: 0 },
+          ];
+        return [{ time: timed(f2) }, { time: timed(f3) }];
+      }
+      function coinsFor(game, L, r) {
+        if (!L || !isPassed(r)) return 0;
+        const [c2, c3] = coinTargets(game, L);
+        const meets = (c) => {
+          if (game === "speed")
+            return (Number(r.found) || 0) >= c.hits && (Number(r.misses ?? r.mistakes) || 0) <= c.misses;
+          const t = (Number(r.elapsedMs) || 0) / 1000,
+            m = Number(r.mistakes) || 0;
+          return t <= c.time && (c.mistakes === undefined || m <= c.mistakes);
+        };
+        return meets(c3) ? 3 : meets(c2) ? 2 : 1;
+      }
+      function roundCoins(r) {
+        return r.coins ?? coinsFor(r.game, ladder(r.game)[r.level - 1], r);
+      }
+      function bestCoinsByLevel(game, excludeId) {
+        const best = new Map();
+        for (const r of levelRounds(game)) {
+          if (r.id === excludeId) continue;
+          best.set(r.level, Math.max(best.get(r.level) || 0, roundCoins(r)));
+        }
+        return best;
+      }
+      function totalCoins(game) {
+        let sum = 0;
+        for (const v of bestCoinsByLevel(game).values()) sum += v;
+        return sum;
+      }
+      function coinsUpTo(game, k) {
+        const best = bestCoinsByLevel(game);
+        let sum = 0;
+        for (let n = 1; n <= k; n++) sum += best.get(n) || 0;
+        return sum;
+      }
+      // Gate levels (5, 9, 13, 17) need an average of 2 coins over every level before them.
+      function gateInfo(game, n) {
+        if (n <= 1 || (n - 1) % 4 !== 0) return null;
+        const need = 2 * (n - 1),
+          have = coinsUpTo(game, n - 1);
+        return { need, have, ok: have >= need, from: 1, to: n - 1 };
+      }
+      function coinTargetText(game, L) {
+        const [c2, c3] = coinTargets(game, L);
+        const fmt = (c) =>
+          game === "speed"
+            ? `${c.hits} hits${c.misses ? " · ≤ 1 miss" : " · no misses"}`
+            : `≤ ${c.time}s` +
+              (c.mistakes === undefined
+                ? ""
+                : c.mistakes
+                  ? ` · ≤ ${c.mistakes} mistake${c.mistakes === 1 ? "" : "s"}`
+                  : " · no mistakes");
+        return [fmt(c2), fmt(c3)];
+      }
+
+      // ---- Coin visuals: CSS-drawn gold coins (no images), so they stay crisp at every size ----
+      function coinEl(full, size = 18, extra = "") {
+        const c = document.createElement("span");
+        c.className = `coin ${full ? "full" : "empty"} ${extra}`.trim();
+        c.style.setProperty("--cs", size + "px");
+        c.setAttribute("aria-hidden", "true");
+        return c;
+      }
+      function coinRow(count, size = 16, total = 3) {
+        const row = document.createElement("span");
+        row.className = "coin-row";
+        row.setAttribute("aria-label", `${count} of ${total} coins`);
+        for (let i = 0; i < total; i++) row.append(coinEl(i < count, size));
+        return row;
+      }
+      function coinTotalChip(value, max, size = 15) {
+        const chip = document.createElement("span");
+        chip.className = "coin-total";
+        const b = document.createElement("b");
+        b.textContent = String(value);
+        const small = document.createElement("small");
+        small.textContent = max ? "/" + max : "";
+        chip.append(coinEl(true, size), b, small);
+        return chip;
+      }
+      function playCoinSound(count) {
+        if (!soundEnabled || !count) return;
+        unlockAudio();
+        if (!audioContext) return;
+        const t = audioContext.currentTime + 0.25;
+        for (let i = 0; i < count; i++) {
+          tone(1320 + i * 180, t + i * 0.22, 0.09, "triangle", 0.09);
+          tone(1980 + i * 240, t + i * 0.22 + 0.06, 0.16, "sine", 0.07);
+        }
       }
       function levelSummary(game, L) {
         if (game === "focus")
@@ -7461,6 +7757,7 @@
           fields.level = currentLevelNumber();
           fields.stars = starsFor(mode, L, round);
           fields.passed = fields.stars >= PASS_STARS;
+          fields.coins = coinsFor(mode, L, { ...round, ...fields });
         }
         return fields;
       }
@@ -7569,16 +7866,17 @@
         } else applyLevel(currentLevelNumber());
       }
       function updateLevelBar() {
+        const marks = $("levelPickStars");
+        marks.replaceChildren();
         if (practiceMode || !LEVEL_LADDERS[mode]) {
           $("levelPickTitle").textContent = "Practice";
-          $("levelPickStars").textContent = "";
           $("levelPickDesc").textContent = "Free settings in ⚙ Options · not counted";
           return;
         }
         const n = currentLevelNumber(),
           L = ladder()[n - 1];
         $("levelPickTitle").textContent = `Level ${n} / ${ladder().length}`;
-        $("levelPickStars").textContent = passMark(mode, n);
+        marks.append(coinRow(bestCoinsByLevel(mode).get(n) || 0, 14));
         $("levelPickDesc").textContent = levelSummary(mode, L) + " ▾";
       }
       function decorateLevelIntro() {
@@ -7600,17 +7898,30 @@
         const goal = document.createElement("strong");
         goal.className = "pass-goal";
         goal.textContent = "To pass: " + passGoal(mode, L);
-        banner.append(goal);
+        banner.append(goal, coinGoalsEl(mode, L));
         banner.hidden = false;
       }
 
+      function coinGoalsEl(game, L) {
+        const box = document.createElement("div");
+        box.className = "coin-goals";
+        coinTargetText(game, L).forEach((text, i) => {
+          const line = document.createElement("span");
+          line.append(coinRow(i + 2, 12, i + 2), document.createTextNode(text));
+          box.append(line);
+        });
+        return box;
+      }
       function showRoundScore(round) {
         const banner = $("roundScore");
         if (!round) return;
         banner.hidden = false;
         banner.replaceChildren();
         banner.classList.remove("failed");
-        $("nextLevelButton").hidden = true;
+        const next = $("nextLevelButton");
+        next.hidden = true;
+        next.dataset.action = "next";
+        next.textContent = "Next level ▶";
         $("startButton").classList.remove("as-secondary");
         if (round.practice || round.level === undefined) {
           const t = document.createElement("strong");
@@ -7619,6 +7930,29 @@
           return;
         }
         const L = ladder(round.game)[round.level - 1];
+        const earned = round.coins ?? roundCoins(round);
+        const before = bestCoinsByLevel(round.game, round.id).get(round.level) || 0;
+        if (round.passed) {
+          // Coins drop in one by one; coins beyond your previous best glow.
+          const box = document.createElement("div");
+          box.className = "coin-result";
+          const row = document.createElement("span");
+          row.className = "coin-row";
+          for (let i = 0; i < 3; i++) {
+            const c = coinEl(i < earned, 34, i < earned ? "drop" + (i >= before ? " new" : "") : "");
+            c.style.setProperty("--delay", 150 + i * 220 + "ms");
+            row.append(c);
+          }
+          const label = document.createElement("span");
+          label.className = "coin-label";
+          label.textContent =
+            earned > before
+              ? `+${earned - before} coin${earned - before === 1 ? "" : "s"} · new best!`
+              : `${earned} coin${earned === 1 ? "" : "s"} · best here: ${before}`;
+          box.append(row, label);
+          banner.append(box);
+          playCoinSound(earned);
+        }
         const line = document.createElement("strong");
         line.className = "pass-result";
         line.textContent = round.passed ? `✓ Level ${round.level} passed` : `✗ Not passed`;
@@ -7629,17 +7963,34 @@
         you.className = "pass-detail";
         you.textContent = roundOutcomeText(round);
         banner.append(line, need, you);
+        if (round.passed && earned < 3) banner.append(coinGoalsEl(round.game, L));
         if (!round.passed) banner.classList.add("failed");
-        const hasNext = round.level < ladder(round.game).length;
-        if (round.passed && hasNext) {
-          $("nextLevelButton").hidden = false;
+        const total = ladder(round.game).length,
+          hasNext = round.level < total;
+        const gate = hasNext ? gateInfo(round.game, round.level + 1) : null;
+        if (round.passed && hasNext && gate && !gate.ok) {
+          const note = document.createElement("span");
+          note.className = "gate-note";
+          note.append(
+            document.createTextNode(`🔒 Level ${round.level + 1} needs `),
+            coinTotalChip(gate.need, 0, 14),
+            document.createTextNode(` · you have ${gate.have}`),
+          );
+          banner.append(note);
+          next.hidden = false;
+          next.dataset.action = "coins";
+          next.textContent = "Earn coins ▸";
+          $("startButton").textContent = "Replay";
+          $("startButton").classList.add("as-secondary");
+        } else if (round.passed && hasNext) {
+          next.hidden = false;
           $("startButton").textContent = "Replay";
           $("startButton").classList.add("as-secondary");
         } else {
           $("startButton").textContent = round.passed ? "Replay level" : "Retry level";
         }
         if (round.passed && !hasNext)
-          banner.append(document.createTextNode(`🏆 All ${ladder(round.game).length} levels complete!`));
+          banner.append(document.createTextNode(`🏆 All ${total} levels complete!`));
         updateLevelBar();
       }
       function openLevelDialog() {
@@ -7647,29 +7998,40 @@
         const grid = $("levelGrid");
         grid.replaceChildren();
         const passed = passedLevels(mode),
+          coins = bestCoinsByLevel(mode),
           current = currentLevelNumber();
         $("levelDialogTitle").textContent = GAME_NAMES[mode] + " · Levels";
-        $("levelDialogNote").textContent =
-          `${highestPassed(mode)} / ${ladder().length} passed. Pass a level to unlock the next.`;
+        const note = $("levelDialogNote");
+        note.replaceChildren(
+          coinTotalChip(totalCoins(mode), ladder().length * 3, 16),
+          document.createTextNode(
+            `  ·  ${highestPassed(mode)} / ${ladder().length} passed. Every 4th level also needs coins: replay earlier levels faster to earn more.`,
+          ),
+        );
         ladder().forEach((L, i) => {
           const n = i + 1,
-            open = isUnlocked(mode, n);
+            open = isUnlocked(mode, n),
+            gate = gateInfo(mode, n),
+            gated = !open && gate && passed.has(n - 1);
           const b = document.createElement("button");
           b.type = "button";
           b.className =
             "level-tile" +
             (n === current ? " current" : "") +
             (open ? "" : " locked") +
+            (gated ? " gated" : "") +
             (passed.has(n) ? " passed" : "");
           b.disabled = !open;
           const num = document.createElement("b");
           num.textContent = open ? String(n) : "🔒";
-          const st = document.createElement("span");
-          st.className = "stars";
-          st.textContent = passed.has(n) ? "✓ passed" : open ? "open" : "";
           const desc = document.createElement("small");
           desc.textContent = levelSummary(mode, L);
-          b.append(num, st, desc);
+          if (gated) {
+            const g = document.createElement("small");
+            g.className = "gate";
+            g.append(coinEl(true, 12), document.createTextNode(`${gate.have} / ${gate.need}`));
+            b.append(num, g, desc);
+          } else b.append(num, coinRow(coins.get(n) || 0, 13), desc);
           b.addEventListener("click", () => {
             $("levelDialog").close();
             applyLevel(n);
@@ -7683,8 +8045,9 @@
         $("closeLevels").addEventListener("click", () => $("levelDialog").close());
         $("levelsTab").addEventListener("click", () => practiceMode && setPlayType(false));
         $("practiceTab").addEventListener("click", () => !practiceMode && setPlayType(true));
-        $("nextLevelButton").addEventListener("click", () => {
-          applyLevel(currentLevelNumber() + 1);
+        $("nextLevelButton").addEventListener("click", (e) => {
+          if (e.currentTarget.dataset.action === "coins") openLevelDialog();
+          else applyLevel(currentLevelNumber() + 1);
         });
       }
 
@@ -7703,7 +8066,7 @@
         if (!$("statsScreen")) return;
         const all = activeRounds();
         if (LEVEL_LADDERS[mode]) {
-          $("playBest").innerHTML = `✓ <b>${highestPassed(mode)}</b>/${ladder().length}`;
+          $("playBest").replaceChildren(coinTotalChip(totalCoins(mode), ladder().length * 3, 15));
           $("playScoreMini").textContent =
             `${GAME_NAMES[mode]} · ${highestPassed(mode)} / ${ladder().length} levels passed`;
         }
@@ -7721,8 +8084,10 @@
           levels += ladder(g).length;
         }
         const levelRows = LEVEL_GAMES.flatMap((g) => levelRounds(g));
+        let coinsAll = 0;
+        for (const g of LEVEL_GAMES) coinsAll += totalCoins(g);
+        addMetric(container, `${coinsAll}/${levels * 3}`, "Coins");
         addMetric(container, `${passed}/${levels}`, "Levels passed");
-        addMetric(container, levelRows.length, "Level rounds");
         addMetric(
           container,
           levelRows.length
@@ -7760,9 +8125,16 @@
           const strong = document.createElement("strong");
           strong.textContent = `${top}/${max}`;
           const small = document.createElement("small");
-          small.textContent = "Levels passed";
+          small.textContent = "Levels";
           box.append(strong, small);
-          figures.append(box);
+          const cbox = document.createElement("div");
+          const cs = document.createElement("strong");
+          cs.className = "coin-figure";
+          cs.append(coinEl(true, 15), document.createTextNode(" " + totalCoins(g)));
+          const csm = document.createElement("small");
+          csm.textContent = `of ${max * 3}`;
+          cbox.append(cs, csm);
+          figures.append(box, cbox);
           card.append(info, figures);
           cards.append(card);
         }
@@ -7790,7 +8162,7 @@
           r.game === "speed"
             ? `${r.found} hits · ${r.misses ?? 0} missed · ${r.score} pts`
             : `${secs}s · ${r.mistakes} mistake${r.mistakes === 1 ? "" : "s"}`;
-        return `${formatDate(r.at)} · Level ${r.level} · ${isPassed(r) ? "✓ passed" : "✗ not passed"} · ${extra}`;
+        return `${formatDate(r.at)} · Level ${r.level} · ${isPassed(r) ? "✓ passed · " + roundCoins(r) + " 🪙" : "✗ not passed"} · ${extra}`;
       }
       function buildLevelChart(game, rows, windowSize) {
         const max = ladder(game).length;
