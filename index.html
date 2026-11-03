@@ -6900,6 +6900,7 @@
       }
       function changeMode(selected) {
         if (mode === selected) return;
+        coinHunt = null;
         mode = selected;
         refs.shell.dataset.mode = mode;
         for (const [name, id] of [
@@ -7899,6 +7900,13 @@
           have = coinsUpTo(game, n - 1);
         return { need, have, ok: have >= need, from: 1, to: n - 1 };
       }
+      let coinHunt = null; // { game, target } while replaying earlier levels to open a coin gate
+      // The level to replay for coins: the highest level below the gate without all 3 coins.
+      function coinHuntLevel(game, target) {
+        const best = bestCoinsByLevel(game);
+        for (let n = target - 1; n >= 1; n--) if ((best.get(n) || 0) < 3) return n;
+        return target - 1;
+      }
       function coinTargetText(game, L) {
         const [c2, c3] = coinTargets(game, L);
         const fmt = (c) =>
@@ -8219,6 +8227,7 @@
         if (!practiceMode) applyLevel(currentLevelNumber());
       }
       function setPlayType(practice) {
+        coinHunt = null;
         practiceMode = practice;
         document.body.classList.toggle("practice-on", practice);
         document.body.classList.toggle("levels-on", !practice);
@@ -8307,6 +8316,7 @@
         next.hidden = true;
         next.dataset.action = "next";
         next.textContent = "Next level ▶";
+        $("startButton").hidden = false;
         $("startButton").classList.remove("as-secondary");
         if (round.challenge) {
           const L = ladder(round.game)[round.level - 1];
@@ -8372,21 +8382,42 @@
         if (!round.passed) banner.classList.add("failed");
         const total = ladder(round.game).length,
           hasNext = round.level < total;
-        const gate = hasNext ? gateInfo(round.game, round.level + 1) : null;
-        if (round.passed && hasNext && gate && !gate.ok) {
+        // Coin hunt: the gate target is remembered, so once it opens the player goes to the level they
+        // were trying to reach, not to the level after the one they replayed.
+        const hunting = coinHunt && coinHunt.game === round.game;
+        const target = hunting ? coinHunt.target : round.level + 1;
+        const gate = target <= total ? gateInfo(round.game, target) : null;
+        const gateNote = (g, t) => {
           const note = document.createElement("span");
           note.className = "gate-note";
           note.append(
-            document.createTextNode(`🔒 Level ${round.level + 1} needs `),
-            coinTotalChip(gate.need, 0, 14),
-            document.createTextNode(` · you have ${gate.have}`),
+            document.createTextNode(`🔒 Level ${t} needs `),
+            coinTotalChip(g.need, 0, 14),
+            document.createTextNode(` · you have ${g.have} · ${g.need - g.have} to go`),
           );
+          return note;
+        };
+        if (hunting && gate && gate.ok) {
+          const note = document.createElement("span");
+          note.className = "gate-note";
+          note.textContent = `🔓 Level ${target} is open!`;
           banner.append(note);
           next.hidden = false;
-          next.dataset.action = "coins";
-          next.textContent = "Earn coins ▸";
-          $("startButton").textContent = "Replay";
+          next.dataset.action = "goto";
+          next.dataset.target = String(target);
+          next.textContent = `Level ${target} ▶`;
+          $("startButton").textContent = round.passed ? "Replay" : "Retry level";
           $("startButton").classList.add("as-secondary");
+        } else if ((hunting || (round.passed && hasNext)) && gate && !gate.ok) {
+          banner.append(gateNote(gate, target));
+          next.hidden = false;
+          next.dataset.action = "hunt";
+          next.dataset.target = String(target);
+          const pick = coinHuntLevel(round.game, target);
+          next.textContent = pick === round.level ? `Again for coins ▸` : `Earn coins: L${pick} ▸`;
+          $("startButton").textContent = round.passed ? "Replay" : "Retry level";
+          $("startButton").classList.add("as-secondary");
+          if (pick === round.level) $("startButton").hidden = true; // same level: one button is enough
         } else if (round.passed && hasNext) {
           next.hidden = false;
           $("startButton").textContent = "Replay";
@@ -8439,6 +8470,7 @@
           } else b.append(num, coinRow(coins.get(n) || 0, 13), desc);
           b.addEventListener("click", () => {
             $("levelDialog").close();
+            coinHunt = null;
             applyLevel(n);
           });
           grid.append(b);
@@ -8452,8 +8484,18 @@
         $("practiceTab").addEventListener("click", () => !practiceMode && setPlayType(true));
         $("nextLevelButton").addEventListener("click", (e) => {
           if (e.currentTarget.dataset.action === "challenge-next") challengeAdvance();
-          else if (e.currentTarget.dataset.action === "coins") openLevelDialog();
-          else applyLevel(currentLevelNumber() + 1);
+          else if (e.currentTarget.dataset.action === "hunt") {
+            const target = Number(e.currentTarget.dataset.target);
+            coinHunt = { game: mode, target };
+            applyLevel(coinHuntLevel(mode, target));
+          } else if (e.currentTarget.dataset.action === "goto") {
+            const target = Number(e.currentTarget.dataset.target);
+            coinHunt = null;
+            applyLevel(target);
+          } else {
+            coinHunt = null;
+            applyLevel(currentLevelNumber() + 1);
+          }
         });
       }
 
