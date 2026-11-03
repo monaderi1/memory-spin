@@ -1114,7 +1114,7 @@
         transform: translateX(-50%);
         width: min(100%, 640px);
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         background: #152139ed;
         backdrop-filter: blur(14px);
         border-top: 1px solid #ffffff20;
@@ -3008,6 +3008,228 @@
           animation: none;
         }
       }
+      /* ---------- Challenges ---------- */
+      .ch-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 15px;
+        padding: 13px;
+        display: grid;
+        gap: 9px;
+      }
+      .ch-card h2 {
+        font-size: 15px;
+        margin: 0;
+      }
+      .ch-card h3 {
+        font-size: 13px;
+        margin: 4px 0 0;
+        color: #cfe0f5;
+      }
+      .ch-error {
+        color: #ffaaa3;
+        font-size: 12px;
+        margin: 0;
+      }
+      .ch-build {
+        display: grid;
+        gap: 6px;
+      }
+      .ch-build-row {
+        display: grid;
+        grid-template-columns: 22px minmax(0, 0.9fr) minmax(0, 1.4fr) 30px;
+        gap: 5px;
+        align-items: center;
+      }
+      .ch-build-row select {
+        min-width: 0;
+        background: #0f1b2d;
+        color: #fff;
+        border: 1px solid #526481;
+        border-radius: 8px;
+        padding: 7px 5px;
+        font-size: 11px;
+      }
+      .ch-idx {
+        display: grid;
+        place-items: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #2e5065;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .ch-del {
+        border: 0;
+        border-radius: 8px;
+        background: #30243b;
+        color: #ffb8bd;
+        height: 30px;
+      }
+      .ch-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .ch-actions .primary,
+      .ch-actions .secondary {
+        flex: 1;
+        min-width: 120px;
+      }
+      .ch-made {
+        display: grid;
+        gap: 6px;
+        justify-items: center;
+        padding: 10px;
+        border-radius: 12px;
+        background: #12304a;
+        border: 1px dashed #6addcf88;
+      }
+      .ch-code {
+        font:
+          900 26px/1.1 ui-monospace,
+          "SF Mono",
+          Menlo,
+          Consolas,
+          monospace;
+        letter-spacing: 2px;
+        color: #ffe08a;
+        text-align: center;
+        word-break: break-all;
+      }
+      .ch-code.small {
+        font-size: 15px;
+        letter-spacing: 1px;
+      }
+      .ch-result {
+        border-color: #ffd16677;
+        background: linear-gradient(160deg, #22344f, #172538);
+        justify-items: stretch;
+      }
+      .ch-result h2 {
+        text-align: center;
+        font-size: 18px;
+      }
+      .ch-scores {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .ch-score {
+        display: grid;
+        justify-items: center;
+        background: #101e32;
+        border-radius: 11px;
+        padding: 8px;
+      }
+      .ch-score b {
+        font-size: 24px;
+        color: #ffe08a;
+      }
+      .ch-score small {
+        font-size: 10px;
+        color: #a9bdd8;
+        text-align: center;
+      }
+      .ch-steps {
+        display: grid;
+        gap: 4px;
+      }
+      .ch-step {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        padding: 5px 9px;
+        border-radius: 8px;
+        background: #1b2b43;
+      }
+      .ch-step.ok span:first-child {
+        color: #9ef1ba;
+      }
+      .ch-step.bad span:first-child {
+        color: #ffaaa3;
+      }
+      .ch-board {
+        display: grid;
+        gap: 4px;
+      }
+      .ch-row {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr) auto auto;
+        gap: 8px;
+        align-items: center;
+        font-size: 13px;
+        padding: 6px 9px;
+        border-radius: 9px;
+        background: #1b2b43;
+      }
+      .ch-row.me {
+        outline: 2px solid #6addcf;
+      }
+      .ch-rank {
+        text-align: center;
+        font-weight: 800;
+      }
+      .ch-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .ch-pass {
+        color: #9ef1ba;
+        font-weight: 800;
+      }
+      .ch-time {
+        color: #ffe08a;
+        font-variant-numeric: tabular-nums;
+      }
+      .ch-recent {
+        display: grid;
+        gap: 6px;
+        padding: 9px;
+        border-radius: 12px;
+        background: #152338;
+      }
+      .ch-recent-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .ch-bar {
+        display: none;
+      }
+      body.challenge-on #playScreen .ch-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        background: linear-gradient(90deg, #3a2a10, #2b2440);
+        border: 1px solid #ffd16677;
+        border-radius: 11px;
+        padding: 6px 10px;
+        font-size: 12px;
+        color: #ffe08a;
+        font-weight: 750;
+      }
+      .ch-bar button {
+        border: 0;
+        border-radius: 8px;
+        background: #4a2a36;
+        color: #ffc7cc;
+        font-size: 11px;
+        padding: 5px 9px;
+      }
+      body.challenge-on #playScreen .mode-switch,
+      body.challenge-on #playScreen .level-bar,
+      body.challenge-on #newGameButton {
+        display: none !important;
+      }
+      body.challenge-on .bottom-nav {
+        pointer-events: none;
+        opacity: 0.4;
+      }
       /* ---------- Board animations ---------- */
       .cell text {
         transform-box: fill-box;
@@ -3293,6 +3515,9 @@
           <button class="mode-choice" id="splitMode" aria-pressed="false" type="button">
             <span class="mode-icon" aria-hidden="true">✂️</span><span class="mode-title">Split</span>
           </button>
+        </div>
+        <div class="ch-bar" id="challengeBar">
+          <span id="challengeBarText">Challenge</span><button type="button" id="challengeQuit">✕ Quit</button>
         </div>
         <div class="level-bar" id="levelBar">
           <button class="level-pick" id="levelPickButton" type="button" aria-haspopup="dialog">
@@ -3778,9 +4003,55 @@
           files, clear browser data, or change phones.
         </p>
       </section>
+      <section class="screen info-screen" id="challengeScreen" hidden aria-label="Challenges">
+        <div class="section-head">
+          <div>
+            <h1>Challenges</h1>
+            <p>Same code = same boards for everyone. One attempt per step.</p>
+          </div>
+        </div>
+        <section id="challengeResult" class="ch-card ch-result" hidden></section>
+        <section class="ch-card">
+          <h2>Join a challenge</h2>
+          <div class="dialog-inline">
+            <input
+              id="challengeCodeInput"
+              placeholder="e.g. 7QX2-P7T5S3"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+            /><button class="primary" type="button" id="challengeJoin">Start ▶</button>
+          </div>
+          <p class="ch-error" id="challengeError" hidden>That code isn't valid. Check letters and numbers.</p>
+        </section>
+        <section class="ch-card">
+          <h2>Create a challenge</h2>
+          <p class="muted-note">Pick games and levels (any level, locked or not). Up to 8 steps.</p>
+          <div id="challengeSteps" class="ch-build"></div>
+          <div class="ch-actions">
+            <button class="secondary" type="button" id="challengeAddStep">+ Add step</button>
+            <button class="primary" type="button" id="challengeCreate">Create code</button>
+          </div>
+          <div id="challengeMade" class="ch-made" hidden>
+            <span class="muted-note">Your challenge code</span>
+            <div class="ch-code" id="challengeMadeCode"></div>
+            <div class="ch-actions">
+              <button class="secondary" type="button" id="challengeCopy">Share code</button>
+              <button class="primary" type="button" id="challengePlayMade">Play it ▶</button>
+            </div>
+          </div>
+        </section>
+        <section class="ch-card">
+          <h2>Played on this phone</h2>
+          <div id="challengeRecent"></div>
+        </section>
+      </section>
       <nav class="bottom-nav" aria-label="Main navigation">
         <button id="navPlay" class="nav-item active" data-screen="play" aria-current="page" type="button">
           <span>◉</span>Play
+        </button>
+        <button id="navChallenge" class="nav-item" data-screen="challenge" type="button">
+          <span>⚑</span>Challenge
         </button>
         <button id="navStats" class="nav-item" data-screen="stats" type="button"><span>▥</span>Stats</button>
         <button id="navHistory" class="nav-item" data-screen="history" type="button">
@@ -3832,6 +4103,9 @@
     </main>
     <script>
       "use strict";
+      // Native RNG, kept for purely visual randomness. Challenges temporarily replace Math.random
+      // with a seeded generator while building boards (see Challenges).
+      const vrand = Math.random.bind(Math);
       const PREVIEW_MS = 3000,
         NS = "http://www.w3.org/2000/svg",
         RADIUS = 296;
@@ -4353,8 +4627,8 @@
           angle = patternAngle + patternDir * speed * dt;
         else if (patternSpin === "chaos") {
           if (t >= patternNextChangeAt) {
-            patternVel = (Math.random() < 0.5 ? -1 : 1) * speed * (0.6 + Math.random() * 0.8);
-            patternNextChangeAt = t + 1200 + Math.random() * 1800;
+            patternVel = (vrand() < 0.5 ? -1 : 1) * speed * (0.6 + vrand() * 0.8);
+            patternNextChangeAt = t + 1200 + vrand() * 1800;
           }
           angle = patternAngle + patternVel * dt;
         } else if (patternSpin === "reverse") {
@@ -4366,7 +4640,7 @@
           // Calculate the new angle separately. If patternAngle is updated here,
           // the change detector below stays false and the SVG never rotates.
           if (patternPointer === null && t >= patternNextJumpAt) {
-            angle = (patternAngle + 90 * (Math.random() < 0.5 ? -1 : 1) + 360) % 360;
+            angle = (patternAngle + 90 * (vrand() < 0.5 ? -1 : 1) + 360) % 360;
             patternNextJumpAt = t + 2600;
           }
         }
@@ -5635,16 +5909,16 @@
           const badge = g.querySelector(".num-badge");
           if (!badge) continue;
           badge.classList.remove(...NOISE_COLOURS);
-          if (speedNoise && Math.random() < speedNoise)
-            badge.classList.add(NOISE_COLOURS[Math.floor(Math.random() * NOISE_COLOURS.length)]);
+          if (speedNoise && vrand() < speedNoise)
+            badge.classList.add(NOISE_COLOURS[Math.floor(vrand() * NOISE_COLOURS.length)]);
         }
       }
       // Hardest levels: a few random circles briefly swell. Like the colours, chosen without regard to
       // the target, so a pulse never points at the answer.
       function pulseSpeedCircles() {
         const pool = tiles.filter((g) => g.querySelector(".num-badge"));
-        const n = Math.min(pool.length, 1 + Math.floor(Math.random() * 3));
-        for (const g of shuffle([...pool]).slice(0, n)) {
+        const n = Math.min(pool.length, 1 + Math.floor(vrand() * 3));
+        for (const g of [...pool].sort(() => vrand() - 0.5).slice(0, n)) {
           g.classList.remove("pulse");
           void g.getBoundingClientRect();
           g.classList.add("pulse");
@@ -6034,11 +6308,11 @@
         }
         if (state === "playing" && speedPulseOn() && now >= speedPulseAt) {
           pulseSpeedCircles();
-          speedPulseAt = now + 700 + Math.random() * 900;
+          speedPulseAt = now + 700 + vrand() * 900;
         }
         if (mode === "speed" && speedNoise && now >= speedNoiseAt) {
           rerollSpeedNoise();
-          speedNoiseAt = now + 900 + Math.random() * 900;
+          speedNoiseAt = now + 900 + vrand() * 900;
         }
         if (mode === "speed" && speedTargetKey !== null) {
           const left = Math.max(0, speedWindowMs - (now - speedTargetAt));
@@ -6126,7 +6400,7 @@
       // Numbers "drop" into their cells when the board is revealed.
       function dealBoard(maxDelay = 450) {
         const texts = refs.wheel.querySelectorAll(".cell text");
-        texts.forEach((t) => t.style.setProperty("--d", Math.round(Math.random() * maxDelay) + "ms"));
+        texts.forEach((t) => t.style.setProperty("--d", Math.round(vrand() * maxDelay) + "ms"));
         refs.wheel.classList.remove("deal");
         void refs.wheel.getBoundingClientRect();
         refs.wheel.classList.add("deal");
@@ -6709,7 +6983,7 @@
           len = Math.ceil(sr * duration),
           buffer = audioContext.createBuffer(1, len, sr),
           samples = buffer.getChannelData(0);
-        for (let i = 0; i < len; i++) samples[i] = Math.random() * 2 - 1;
+        for (let i = 0; i < len; i++) samples[i] = vrand() * 2 - 1;
         let src = audioContext.createBufferSource(),
           filter = audioContext.createBiquadFilter(),
           vol = audioContext.createGain();
@@ -7017,7 +7291,7 @@
       function newId() {
         return typeof crypto !== "undefined" && crypto.randomUUID
           ? crypto.randomUUID()
-          : "p-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+          : "p-" + Date.now().toString(36) + "-" + vrand().toString(36).slice(2, 10);
       }
       function cleanPlayerName(value) {
         return String(value || "")
@@ -7532,6 +7806,7 @@
         return !gate || gate.ok;
       }
       function currentLevelNumber(game = mode) {
+        if (challengeRun && game === mode) return challengeStep().level;
         const max = ladder(game).length;
         if (selectedLevel[game]) return selectedLevel[game];
         let n = Math.min(max, highestPassed(game) + 1);
@@ -7837,6 +8112,13 @@
           fields.stars = starsFor(mode, L, round);
           fields.passed = fields.stars >= PASS_STARS;
           fields.coins = coinsFor(mode, L, { ...round, ...fields });
+          if (challengeRun)
+            Object.assign(fields, {
+              practice: true, // never counts toward levels or coins
+              challenge: challengeRun.code,
+              runId: challengeRun.runId,
+              step: challengeRun.idx,
+            });
         }
         return fields;
       }
@@ -7945,6 +8227,9 @@
         } else applyLevel(currentLevelNumber());
       }
       function updateLevelBar() {
+        if (challengeRun)
+          $("challengeBarText").textContent =
+            `⚑ ${challengeRun.code} · step ${challengeRun.idx + 1}/${challengeRun.steps.length}`;
         const marks = $("levelPickStars");
         marks.replaceChildren();
         if (practiceMode || !LEVEL_LADDERS[mode]) {
@@ -7960,12 +8245,25 @@
       }
       function decorateLevelIntro() {
         const banner = $("roundScore");
+        $("startButton").hidden = false;
         $("nextLevelButton").hidden = true;
         $("startButton").classList.remove("as-secondary");
         banner.classList.remove("failed");
         if (practiceMode) {
           $("overlayTitle").textContent = "Practice · " + $("overlayTitle").textContent;
           banner.hidden = true;
+          return;
+        }
+        if (challengeRun) {
+          const L = activeLevel();
+          $("overlayTitle").textContent =
+            `Step ${challengeRun.idx + 1}/${challengeRun.steps.length} · ${GAME_NAMES[mode]} L${challengeStep().level}`;
+          banner.replaceChildren();
+          const goal = document.createElement("strong");
+          goal.className = "pass-goal";
+          goal.textContent = "To pass: " + passGoal(mode, L);
+          banner.append(goal, document.createTextNode("One attempt only."));
+          banner.hidden = false;
           return;
         }
         const L = activeLevel();
@@ -8002,6 +8300,26 @@
         next.dataset.action = "next";
         next.textContent = "Next level ▶";
         $("startButton").classList.remove("as-secondary");
+        if (round.challenge) {
+          const L = ladder(round.game)[round.level - 1];
+          const line = document.createElement("strong");
+          line.className = "pass-result";
+          line.textContent = round.passed ? "✓ Step passed" : "✗ Step not passed";
+          const need = document.createElement("span");
+          need.className = "pass-detail";
+          need.textContent = `Needed: ${passGoal(round.game, L)}`;
+          const you = document.createElement("span");
+          you.className = "pass-detail";
+          you.textContent = roundOutcomeText(round);
+          banner.append(line, need, you);
+          if (!round.passed) banner.classList.add("failed");
+          const last = round.step + 1 >= challengeRun.steps.length;
+          next.hidden = false;
+          next.dataset.action = "challenge-next";
+          next.textContent = last ? "See results 🏁" : "Next step ▶";
+          $("startButton").hidden = true; // one attempt per step
+          return;
+        }
         if (round.practice || round.level === undefined) {
           const t = document.createElement("strong");
           t.textContent = "Practice round";
@@ -8125,9 +8443,386 @@
         $("levelsTab").addEventListener("click", () => practiceMode && setPlayType(false));
         $("practiceTab").addEventListener("click", () => !practiceMode && setPlayType(true));
         $("nextLevelButton").addEventListener("click", (e) => {
-          if (e.currentTarget.dataset.action === "coins") openLevelDialog();
+          if (e.currentTarget.dataset.action === "challenge-next") challengeAdvance();
+          else if (e.currentTarget.dataset.action === "coins") openLevelDialog();
           else applyLevel(currentLevelNumber() + 1);
         });
+      }
+
+      const MODE_BUTTONS = [
+        ["focus", "focusMode"],
+        ["category", "categoryMode"],
+        ["pattern", "patternMode"],
+        ["links", "linksMode"],
+        ["digits", "digitMode"],
+        ["speed", "speedMode"],
+        ["split", "splitMode"],
+      ];
+      // ------- Challenges: a code = an ordered list of (game, level) steps + a seed -------
+      // Same code ⇒ the same boards for everyone: while a challenge step builds its board, Math.random
+      // is swapped for a PRNG seeded from the code and step. Purely visual randomness (colours,
+      // pulses, chaos spin, deal-in delays) keeps using vrand so it can't desynchronise boards.
+      const CHALLENGE_LETTERS = {
+        focus: "F",
+        category: "C",
+        pattern: "P",
+        links: "L",
+        digits: "D",
+        speed: "T",
+        split: "S",
+      };
+      const CHALLENGE_GAMES = Object.fromEntries(Object.entries(CHALLENGE_LETTERS).map(([g, l]) => [l, g]));
+      const CHALLENGE_MAX_STEPS = 8,
+        MISTAKE_PENALTY_S = 5;
+      let challengeRun = null, // { code, seed, steps, idx, runId, savedLevels }
+        challengeDraft = [];
+      function mulberry32(a) {
+        return function () {
+          a |= 0;
+          a = (a + 0x6d2b79f5) | 0;
+          let t = Math.imul(a ^ (a >>> 15), 1 | a);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      function hashString(s) {
+        let h = 2166136261;
+        for (const ch of s) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+        return h >>> 0;
+      }
+      function encodeChallenge(seed, steps) {
+        return seed + "-" + steps.map((s) => CHALLENGE_LETTERS[s.game] + s.level).join("");
+      }
+      function parseChallenge(raw) {
+        const code = String(raw || "")
+          .toUpperCase()
+          .replace(/[^A-Z0-9-]/g, "");
+        const m = code.match(/^([A-Z0-9]{4})-((?:[A-Z]\d{1,2})+)$/);
+        if (!m) return null;
+        const steps = [...m[2].matchAll(/([A-Z])(\d{1,2})/g)].map(([, l, n]) => ({
+          game: CHALLENGE_GAMES[l],
+          level: Number(n),
+        }));
+        if (
+          !steps.length ||
+          steps.length > CHALLENGE_MAX_STEPS ||
+          steps.some((s) => !s.game || s.level < 1 || s.level > ladder(s.game).length)
+        )
+          return null;
+        return { code: m[1] + "-" + m[2], seed: m[1], steps };
+      }
+      function newSeed() {
+        let s = "";
+        for (let i = 0; i < 4; i++) s += "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(vrand() * 32)];
+        return s;
+      }
+      function challengeStep() {
+        return challengeRun && challengeRun.steps[challengeRun.idx];
+      }
+      function seedBoardRandom() {
+        Math.random = mulberry32(hashString(challengeRun.code + "#" + challengeRun.idx));
+      }
+      function restoreRandom() {
+        Math.random = vrand;
+      }
+      function startChallenge(parsed) {
+        if (!parsed) return;
+        challengeRun = { ...parsed, idx: 0, runId: newId(), savedLevels: { ...selectedLevel } };
+        document.body.classList.add("challenge-on");
+        goToScreen("play");
+        runChallengeStep();
+      }
+      function runChallengeStep() {
+        const step = challengeStep();
+        seedBoardRandom();
+        if (mode !== step.game) {
+          mode = step.game;
+          refs.shell.dataset.mode = mode;
+          for (const [name, id] of MODE_BUTTONS) {
+            $(id).classList.toggle("active", name === mode);
+            $(id).setAttribute("aria-pressed", String(name === mode));
+          }
+        }
+        // The seeded RNG stays active for the whole step: board, Recall direction, Split rule and Target
+        // order all come from it. Visual effects use vrand. It is restored when the challenge ends.
+        applyLevel(step.level);
+      }
+      function endChallenge(showSummary) {
+        restoreRandom();
+        const run = challengeRun;
+        challengeRun = null;
+        document.body.classList.remove("challenge-on");
+        for (const k of Object.keys(selectedLevel)) delete selectedLevel[k];
+        Object.assign(selectedLevel, run ? run.savedLevels : {});
+        if (!practiceMode) applyLevel(currentLevelNumber());
+        renderProfileSummary();
+        renderChallengeScreen();
+        if (showSummary && run) {
+          goToScreen("challenge");
+          showChallengeResult(run.code, run.runId);
+        }
+      }
+      function challengeAdvance() {
+        if (!challengeRun) return;
+        if (challengeRun.idx + 1 >= challengeRun.steps.length) endChallenge(true);
+        else {
+          challengeRun.idx++;
+          runChallengeStep();
+        }
+      }
+      // A run's score: steps passed first, then time with a penalty per mistake.
+      function challengeRuns(code) {
+        const parsed = parseChallenge(code);
+        const byRun = new Map();
+        for (const r of profilesDb.rounds) {
+          if (r.challenge !== code) continue;
+          if (!byRun.has(r.runId)) byRun.set(r.runId, []);
+          byRun.get(r.runId).push(r);
+        }
+        const runs = [];
+        for (const [runId, rows] of byRun) {
+          if (!parsed || rows.length < parsed.steps.length) continue; // only finished runs count
+          const passed = rows.filter((r) => r.passed).length;
+          const mistakes = rows.reduce(
+            (s, r) => s + (Number(r.game === "speed" ? (r.misses ?? r.mistakes) : r.mistakes) || 0),
+            0,
+          );
+          const seconds =
+            rows.reduce((s, r) => s + (Number(r.elapsedMs) || 0) / 1000, 0) + MISTAKE_PENALTY_S * mistakes;
+          const profile = profilesDb.profiles.find((p) => p.id === rows[0].profileId);
+          runs.push({
+            runId,
+            passed,
+            total: parsed.steps.length,
+            mistakes,
+            seconds,
+            at: rows[0].at,
+            player: profile ? profile.name : "?",
+            profileId: rows[0].profileId,
+            rows,
+          });
+        }
+        return runs.sort((a, b) => b.passed - a.passed || a.seconds - b.seconds);
+      }
+      function challengeShareText(code, run) {
+        return `Memory Spin challenge ${code}: ${run.passed}/${run.total} passed · ${run.seconds.toFixed(1)}s. Can you beat it?`;
+      }
+      async function shareOrCopy(text) {
+        try {
+          if (navigator.share) {
+            await navigator.share({ text });
+            return "Shared";
+          }
+        } catch (e) {
+          if (e && e.name === "AbortError") return "";
+        }
+        try {
+          await navigator.clipboard.writeText(text);
+          return "Copied";
+        } catch (e) {
+          prompt("Copy this:", text);
+          return "";
+        }
+      }
+      function el(tag, cls, text) {
+        const n = document.createElement(tag);
+        if (cls) n.className = cls;
+        if (text !== undefined) n.textContent = text;
+        return n;
+      }
+      function leaderboardEl(code, highlightRunId) {
+        const runs = challengeRuns(code);
+        const box = el("div", "ch-board");
+        if (!runs.length) {
+          box.append(el("p", "muted-note", "No finished runs yet on this phone."));
+          return box;
+        }
+        // Best run per player on this device.
+        const seen = new Set();
+        let rank = 0;
+        for (const run of runs) {
+          if (seen.has(run.profileId)) continue;
+          seen.add(run.profileId);
+          rank++;
+          const row = el("div", "ch-row" + (run.runId === highlightRunId ? " me" : ""));
+          row.append(
+            el("span", "ch-rank", rank === 1 ? "🏆" : String(rank)),
+            el("span", "ch-name", run.player),
+            el("span", "ch-pass", `${run.passed}/${run.total}`),
+            el("span", "ch-time", run.seconds.toFixed(1) + "s"),
+          );
+          box.append(row);
+        }
+        return box;
+      }
+      function showChallengeResult(code, runId) {
+        const run = challengeRuns(code).find((r) => r.runId === runId);
+        const card = $("challengeResult");
+        card.replaceChildren();
+        card.hidden = !run;
+        if (!run) return;
+        card.append(el("h2", "", "🏁 Challenge complete"), el("div", "ch-code", code));
+        const big = el("div", "ch-score");
+        big.append(el("b", "", `${run.passed}/${run.total}`), el("small", "", "steps passed"));
+        const t = el("div", "ch-score");
+        t.append(
+          el("b", "", run.seconds.toFixed(1) + "s"),
+          el("small", "", `time incl. +${MISTAKE_PENALTY_S}s × ${run.mistakes} mistakes`),
+        );
+        const scores = el("div", "ch-scores");
+        scores.append(big, t);
+        card.append(scores);
+        const steps = el("div", "ch-steps");
+        run.rows
+          .slice()
+          .sort((a, b) => a.step - b.step)
+          .forEach((r) => {
+            const line = el("div", "ch-step " + (r.passed ? "ok" : "bad"));
+            line.append(
+              el("span", "", (r.passed ? "✓ " : "✗ ") + GAME_NAMES[r.game] + " · L" + r.level),
+              el("span", "", ((Number(r.elapsedMs) || 0) / 1000).toFixed(1) + "s"),
+            );
+            steps.append(line);
+          });
+        card.append(steps, el("h3", "", "This phone's ranking"), leaderboardEl(code, runId));
+        const actions = el("div", "ch-actions");
+        const share = el("button", "primary", "Share result");
+        share.type = "button";
+        share.addEventListener("click", async () => {
+          const msg = await shareOrCopy(challengeShareText(code, run));
+          if (msg) share.textContent = msg + " ✓";
+        });
+        const again = el("button", "secondary", "Next player ▶");
+        again.type = "button";
+        again.addEventListener("click", () => {
+          card.hidden = true;
+          $("manageProfiles").click(); // pick or add the next player, then press Start on this code
+          $("challengeCodeInput").value = code;
+        });
+        actions.append(share, again);
+        card.append(actions);
+        card.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      function renderChallengeBuilder() {
+        const list = $("challengeSteps");
+        list.replaceChildren();
+        challengeDraft.forEach((s, i) => {
+          const row = el("div", "ch-build-row");
+          row.append(el("span", "ch-idx", String(i + 1)));
+          const gameSel = el("select");
+          for (const g of LEVEL_GAMES) {
+            const o = el("option", "", GAME_NAMES[g]);
+            o.value = g;
+            gameSel.append(o);
+          }
+          gameSel.value = s.game;
+          const lvlSel = el("select");
+          const fillLevels = () => {
+            lvlSel.replaceChildren();
+            ladder(s.game).forEach((L, k) => {
+              const o = el("option", "", `L${k + 1} · ${levelSummary(s.game, L)}`);
+              o.value = String(k + 1);
+              lvlSel.append(o);
+            });
+            lvlSel.value = String(Math.min(s.level, ladder(s.game).length));
+          };
+          fillLevels();
+          gameSel.addEventListener("change", () => {
+            s.game = gameSel.value;
+            s.level = 1;
+            fillLevels();
+            updateChallengePreview();
+          });
+          lvlSel.addEventListener("change", () => {
+            s.level = Number(lvlSel.value);
+            updateChallengePreview();
+          });
+          const del = el("button", "ch-del", "✕");
+          del.type = "button";
+          del.setAttribute("aria-label", "Remove step");
+          del.addEventListener("click", () => {
+            challengeDraft.splice(i, 1);
+            renderChallengeBuilder();
+          });
+          row.append(gameSel, lvlSel, del);
+          list.append(row);
+        });
+        $("challengeAddStep").disabled = challengeDraft.length >= CHALLENGE_MAX_STEPS;
+        updateChallengePreview();
+      }
+      function updateChallengePreview() {
+        $("challengeCreate").disabled = !challengeDraft.length;
+        $("challengeMade").hidden = true;
+      }
+      function renderChallengeScreen() {
+        const recent = $("challengeRecent");
+        if (!recent) return;
+        recent.replaceChildren();
+        const codes = [];
+        for (const r of profilesDb.rounds)
+          if (r.challenge && !codes.includes(r.challenge)) codes.push(r.challenge);
+        if (!codes.length) {
+          recent.append(el("p", "muted-note", "Challenges played on this phone will appear here."));
+          return;
+        }
+        for (const code of codes.slice(0, 8)) {
+          const card = el("div", "ch-recent");
+          const head = el("div", "ch-recent-head");
+          head.append(el("span", "ch-code small", code));
+          const play = el("button", "secondary", "Play ▶");
+          play.type = "button";
+          play.addEventListener("click", () => startChallenge(parseChallenge(code)));
+          head.append(play);
+          card.append(head, leaderboardEl(code));
+          recent.append(card);
+        }
+      }
+      function bindChallengeUi() {
+        $("challengeAddStep").addEventListener("click", () => {
+          if (challengeDraft.length >= CHALLENGE_MAX_STEPS) return;
+          const last = challengeDraft[challengeDraft.length - 1];
+          const nextGame =
+            LEVEL_GAMES[(LEVEL_GAMES.indexOf(last ? last.game : "speed") + 1) % LEVEL_GAMES.length];
+          challengeDraft.push({ game: nextGame, level: 3 });
+          renderChallengeBuilder();
+        });
+        $("challengeCreate").addEventListener("click", () => {
+          const code = encodeChallenge(newSeed(), challengeDraft);
+          $("challengeMadeCode").textContent = code;
+          $("challengeMade").hidden = false;
+          $("challengeCodeInput").value = code;
+        });
+        $("challengeCopy").addEventListener("click", async (e) => {
+          const code = $("challengeMadeCode").textContent;
+          const msg = await shareOrCopy(`Play my Memory Spin challenge: ${code}`);
+          if (msg) e.currentTarget.textContent = msg + " ✓";
+        });
+        $("challengePlayMade").addEventListener("click", () =>
+          startChallenge(parseChallenge($("challengeMadeCode").textContent)),
+        );
+        $("challengeJoin").addEventListener("click", () => {
+          const parsed = parseChallenge($("challengeCodeInput").value);
+          $("challengeError").hidden = !!parsed;
+          if (parsed) startChallenge(parsed);
+        });
+        $("challengeCodeInput").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") $("challengeJoin").click();
+        });
+        $("challengeQuit").addEventListener("click", () => {
+          if (confirm("Quit this challenge? This run won't be ranked.")) {
+            cancelAnimationFrame(rafId);
+            state = "ready";
+            endChallenge(false);
+          }
+        });
+        challengeDraft = [
+          { game: "focus", level: 3 },
+          { game: "pattern", level: 4 },
+          { game: "speed", level: 3 },
+          { game: "split", level: 2 },
+        ];
+        renderChallengeBuilder();
+        renderChallengeScreen();
       }
 
       // ------- Stats and History (level rounds only; old 0–1,000 rounds are archived) -------
@@ -8412,7 +9107,7 @@
       }
       function goToScreen(name) {
         activeScreen = name;
-        for (const screen of ["play", "stats", "history"]) {
+        for (const screen of ["play", "challenge", "stats", "history"]) {
           $(screen + "Screen").hidden = screen !== name;
           const nav = $("nav" + screen[0].toUpperCase() + screen.slice(1));
           nav.classList.toggle("active", screen === name);
@@ -8420,6 +9115,7 @@
           else nav.removeAttribute("aria-current");
         }
         if (name !== "play") $("gameSettings").open = false;
+        if (name === "challenge" && typeof renderChallengeScreen === "function") renderChallengeScreen();
         window.scrollTo({ top: 0, behavior: "instant" });
       }
       function exportBackup() {
@@ -8592,6 +9288,7 @@
       makePatternBoard();
       preloadAnimalSounds();
       bindLevelUi();
+      bindChallengeUi();
       setPlayType(false);
       renderProfileSummary();
 
