@@ -15,6 +15,7 @@ Open `index.html` in a modern browser. The project is a **single HTML file**: no
 - **Recall**: reproduce a sequence forward or in reverse (digits, pictures or words).
 - **Target**: find changing targets on one or more rings. Levels use numbers and words only (pictures pop out by colour and shape, so they stay in Practice). Numbers sit in small circles; higher levels randomly colour some circles to distract, independent of the target.
 - **Split**: memorize a number such as 453278. After it hides, a split rule is revealed: plain pairs (45 32 78), each pair flipped (54 23 87) or pairs from the 2nd digit (53 27). Tap the matching pairs among traps, which include the pairs the other rules would give, reversed pairs and near numbers. Higher levels add digits, mix all rules and require the pairs in order.
+- **Rain**: memorize 2–6 numbers, then tap only those as numbers fall. Traps are reversed or near versions of your numbers (47 → 74, 48). Letting one of yours fall or tapping any other number costs one of 3 lives. Coins: lose at most 1 life (🪙🪙) or none (🪙🪙🪙).
 
 ## Levels and Practice
 
