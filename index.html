@@ -3312,6 +3312,59 @@
           opacity: 0;
         }
       }
+      #rainStreaks {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        opacity: var(--pour, 0.16);
+        background-image:
+          repeating-linear-gradient(102deg, transparent 0 22px, #c9dbff 22px 23.5px, transparent 23.5px 47px),
+          repeating-linear-gradient(98deg, transparent 0 31px, #9fbcf0 31px 32px, transparent 32px 70px);
+        background-size:
+          100% 120px,
+          100% 170px;
+        animation: rainPour 0.55s linear infinite;
+      }
+      @keyframes rainPour {
+        from {
+          background-position:
+            0 0,
+            0 0;
+        }
+        to {
+          background-position:
+            -26px 120px,
+            -24px 170px;
+        }
+      }
+      /* Night: darker sky and dim, low-contrast numbers, until lightning lights the board. */
+      #rainBoard.night {
+        background:
+          radial-gradient(circle at 50% 18%, #18284255, transparent 60%),
+          linear-gradient(180deg, #070d1a, #040810);
+      }
+      #rainBoard.night .rain-drop {
+        background: radial-gradient(circle at 35% 30%, #3a4b68, #2a3851);
+        border-color: #44587a;
+        color: #93a9cc;
+        box-shadow: none;
+        transition:
+          background 0.25s,
+          color 0.25s;
+      }
+      #rainBoard.night .cloud {
+        filter: brightness(0.45) drop-shadow(0 6px 8px #0008);
+      }
+      #rainBoard.night.lit .rain-drop {
+        background: radial-gradient(circle at 35% 30%, #ffffff, #dfe8f6);
+        color: #1e40af;
+        border-color: #c7d3e6;
+        transition: none;
+      }
+      #rainBoard.night.lit .cloud {
+        filter: brightness(1.1) drop-shadow(0 6px 8px #0008);
+      }
       #rainSky {
         position: absolute;
         inset: 0;
@@ -3326,7 +3379,7 @@
         background: linear-gradient(#a7b9d6, #6c82a6);
         filter: drop-shadow(0 6px 8px #0008);
         opacity: 0.95;
-        animation: cloudDrift 22s ease-in-out infinite alternate;
+        animation: cloudDrift 13s ease-in-out infinite alternate;
       }
       .cloud::before,
       .cloud::after {
@@ -3356,20 +3409,20 @@
         left: 36%;
         width: 34%;
         top: 3%;
-        animation-duration: 28s;
+        animation-duration: 17s;
         animation-direction: alternate-reverse;
       }
       .cloud.c3 {
         left: 60%;
         width: 36%;
-        animation-duration: 19s;
+        animation-duration: 11s;
       }
       @keyframes cloudDrift {
         from {
-          transform: translateX(-6%);
+          transform: translateX(-35%);
         }
         to {
-          transform: translateX(8%);
+          transform: translateX(35%);
         }
       }
       #rainBolt {
@@ -3433,7 +3486,8 @@
         }
       }
       @media (prefers-reduced-motion: reduce) {
-        .cloud {
+        .cloud,
+        #rainStreaks {
           animation: none;
         }
         #rainFlash.strike,
@@ -3844,6 +3898,7 @@
             </svg>
             <div id="rainBoard" hidden aria-label="Tap your numbers as they fall">
               <div id="rainField"></div>
+              <div id="rainStreaks" aria-hidden="true"></div>
               <div id="rainSky" aria-hidden="true">
                 <span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span>
               </div>
@@ -5758,7 +5813,15 @@
         rainLastT = 0,
         rainSerial = 0,
         rainStorm = false,
-        rainBoltAt = 0;
+        rainBoltAt = 0,
+        rainBoltGap = [4, 6],
+        rainPour = 0.16,
+        rainNight = false;
+      function rainApplyWeather() {
+        const board = $("rainBoard");
+        board.style.setProperty("--pour", String(rainPour));
+        board.classList.toggle("night", rainNight);
+      }
       // Lightning is a distraction on harder levels. Timing and shape use vrand, so it never changes
       // a challenge's (seeded) rain.
       function rainLightning() {
@@ -5772,6 +5835,11 @@
           pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
         }
         $("rainBoltLine").setAttribute("points", pts.join(" "));
+        // At night the strike lights the board for a moment: numbers are easy to read, then dim again.
+        const board = $("rainBoard");
+        board.classList.add("lit");
+        clearTimeout(rainLightning.timer);
+        rainLightning.timer = setTimeout(() => board.classList.remove("lit"), 700);
         for (const id of ["rainBolt", "rainFlash"]) {
           const n = $(id);
           n.classList.remove("strike");
@@ -5789,6 +5857,8 @@
         return String(11 + Math.floor(Math.random() * 89));
       }
       function rainReset() {
+        rainApplyWeather();
+        $("rainBoard").classList.remove("lit");
         const set = new Set();
         let guard = 0;
         while (set.size < rainTargetsCount && guard++ < 500) {
@@ -5890,7 +5960,7 @@
         rainLastT = t;
         if (rainStorm && t >= rainBoltAt) {
           if (rainBoltAt) rainLightning();
-          rainBoltAt = t + 4000 + vrand() * 5000;
+          rainBoltAt = t + (rainBoltGap[0] + vrand() * (rainBoltGap[1] - rainBoltGap[0])) * 1000;
         }
         if (t >= rainNextSpawn) {
           rainSpawn();
@@ -7649,6 +7719,10 @@
       $("rainSpeedSelect").addEventListener("change", (e) => {
         rainFallSec = Number(e.target.value);
         rainStorm = rainFallSec <= 3.2;
+        rainBoltGap = rainFallSec <= 2.6 ? [2, 3.5] : [4, 6];
+        rainPour = rainFallSec <= 2.6 ? 0.5 : rainFallSec <= 3.2 ? 0.32 : 0.16;
+        rainNight = rainFallSec <= 2.6;
+        rainApplyWeather();
         rainSpawnMs = Math.round(rainFallSec * 190);
         resetGame();
       });
@@ -8285,6 +8359,11 @@
         [6, 2.8, 500, 0.25, 1, 20, 50, 4],
       ].map(([targets, fall, spawn, share, trap, goal, time, preview], i) => ({
         storm: i + 1 >= 7,
+        // seconds between lightning strikes (min, max): more frequent on higher levels
+        bolt: i + 1 >= 11 ? [2, 3.5] : i + 1 >= 9 ? [2.8, 4.5] : [4, 6],
+        // visible rain streaks: light atmosphere early, heavy (partly covering numbers) later
+        pour: i + 1 >= 9 ? 0.5 : i + 1 >= 5 ? 0.32 : 0.16,
+        night: i + 1 >= 10,
         targets,
         fall,
         spawn,
@@ -8613,7 +8692,7 @@
         if (game === "links") return `${L.length} links · ${L.preview}s to look`;
         if (game === "digits") return `${L.length} ${KIND_LABELS[L.kind]} · ${L.preview}s to look`;
         if (game === "rain")
-          return `${L.targets} numbers · ${L.fall}s fall · catch ${L.goal}${L.storm ? " · ⚡ storm" : ""}`;
+          return `${L.targets} numbers · ${L.fall}s fall · catch ${L.goal}${L.night ? " · 🌙 night" : L.storm ? " · ⚡ storm" : ""}`;
         if (game === "split")
           return `${L.digits} digits · ${L.preview}s to look${L.rules.length > 1 ? " · rule after" : ""}${L.ordered ? " · in order" : ""}`;
         if (game === "speed")
@@ -8752,6 +8831,10 @@
           rainTrap = L.trap;
           rainGoal = L.goal;
           rainStorm = !!L.storm;
+          rainBoltGap = L.bolt;
+          rainPour = L.pour;
+          rainNight = !!L.night;
+          rainApplyWeather();
         } else if (game === "split") {
           splitDigits = L.digits;
           $("splitDigitsSelect").value = String(L.digits);
