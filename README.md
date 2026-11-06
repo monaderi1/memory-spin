@@ -1,10 +1,31 @@
 # Memory Spin
 
-Memory Spin is a mobile-first collection of visual attention and memory games.
+**Eight quick brain games for attention, working memory and speed.** Climb a ladder of levels in each game, earn coins for playing well, and challenge friends with a shareable code. Free, no ads, no sign-up.
 
-## Run
+▶ **Play: https://monaderi1.github.io/memory-spin/**
 
-Open `index.html` in a modern browser. The project is a **single HTML file**: no build step, npm install or app package is needed.
+![Memory Spin](og-image.png)
+
+Version **1.0.0** · released 7 November 2026 · made by Mohammad (Moh) Naderi, Melbourne.
+
+## Play and install
+
+- Open the link on a phone or computer. Nothing to install, and it works offline after the first visit.
+- To add it to your home screen: on Android tap **ⓘ → Install app** (or the browser menu → _Install app_); on iPhone tap **Share → Add to Home Screen**.
+- Results are stored only in your browser on that device. Use **⚙ → Export backup** to move them to another device.
+
+## Run locally
+
+Open `index.html` in a modern browser. The game itself is a **single HTML file**: no build step or npm install. The other files only add the app icon, the share preview and offline support:
+
+| File                             | Purpose                                                                     |
+| -------------------------------- | --------------------------------------------------------------------------- |
+| `index.html`                     | The whole game                                                              |
+| `manifest.webmanifest`, `icons/` | Installable app (name, icon, colours)                                       |
+| `sw.js`                          | Offline play; the page is fetched network-first so updates show immediately |
+| `og-image.png`                   | Link preview in WhatsApp, Telegram, social media                            |
+
+When releasing a new version, update `APP_VERSION` and `APP_RELEASED` in `index.html` and the `CACHE` name in `sw.js`.
 
 ## Games
 
@@ -27,7 +48,7 @@ Every game has a fixed ladder of levels (9–14 per game). Each level pins all o
 - **Coin gates**: levels 5, 9, 13 and 17 also need an average of 2 coins across all earlier levels. If you're short, replay earlier levels faster. A level you've passed never re-locks.
 - **Practice** keeps the free settings under ⚙ Options. Practice rounds are saved but never count toward levels or stars.
 
-Progress is measured as *highest level passed*. The old 0–1,000 score across mixed settings has been retired. Rounds recorded under the old scoring stay in storage and backups, but they are not charted.
+Progress is measured as _highest level passed_. The old 0–1,000 score across mixed settings has been retired. Rounds recorded under the old scoring stay in storage and backups, but they are not charted.
 
 When a ladder's meaning changes, its version (`LADDER_VERSION`) is raised and older rounds for that game are archived. The ladders and pass conditions are defined in `LEVEL_LADDERS` inside `index.html`. They are first estimates and should be tuned after real play-testing.
 
@@ -48,3 +69,9 @@ Profiles and history are stored locally in the browser. Data is not shared betwe
 - The user interface is in English.
 - Some recorded animal sounds need internet access; the app falls back to synthesized sounds.
 - This is an experimental game project, not a clinically validated cognitive assessment or treatment.
+
+## Changelog
+
+### 1.0.0 — 7 November 2026
+
+First public release: eight games (Numbers, Categories, Pattern, Links, Recall, Target, Split, Rain), per-game level ladders with one pass condition each, coins and coin gates, Practice mode, shareable challenges, About screen and first-visit welcome, installable app with offline play.
