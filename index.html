@@ -1407,6 +1407,11 @@
         flex-wrap: wrap;
         margin-top: 12px;
       }
+      .about-mail {
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+      }
       .about-small {
         font-size: 11px !important;
         color: #8ea6c4;
@@ -4619,7 +4624,11 @@
         <div class="about-actions">
           <button class="primary" type="button" id="aboutPlay">Start playing</button>
           <button class="secondary" type="button" id="installApp" hidden>⬇ Install app</button>
+          <a class="secondary about-mail" id="feedbackLink" href="mailto:memspin@outlook.com"
+            >✉ Send feedback</a
+          >
         </div>
+        <p class="about-small">Ideas, bugs or a level that feels unfair? Email <b>memspin@outlook.com</b></p>
         <p class="about-small" id="installHint" hidden>
           To install on iPhone: tap Share, then “Add to Home Screen”.
         </p>
@@ -4815,7 +4824,7 @@
         },
       };
       const $ = (id) => document.getElementById(id);
-      const APP_VERSION = "1.0.0";
+      const APP_VERSION = "1.0.1";
       const APP_RELEASED = "2026-11-07";
       const refs = {
         wheel: $("wheel"),
@@ -10362,6 +10371,11 @@
           year: "numeric",
         });
         $("aboutVersion").textContent = `Version ${APP_VERSION} · ${released}`;
+        $("feedbackLink").href =
+          "mailto:memspin@outlook.com?subject=" +
+          encodeURIComponent(`Memory Spin feedback (v${APP_VERSION})`) +
+          "&body=" +
+          encodeURIComponent(`\n\n---\nVersion ${APP_VERSION} · ${navigator.userAgent}`);
         const dlg = $("aboutDialog");
         const open = (welcome) => {
           $("aboutTitle").textContent = welcome ? "Welcome" : "About";
