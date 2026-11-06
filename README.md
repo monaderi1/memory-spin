@@ -6,7 +6,9 @@
 
 ![Memory Spin](og-image.png)
 
-Version **1.0.0** · released 7 November 2026 · made by Mohammad (Moh) Naderi, Melbourne.
+Version **1.0.1** · released 7 November 2026 · made by Mohammad (Moh) Naderi, Melbourne.
+
+Feedback, bugs or ideas: **memspin@outlook.com** (or ⓘ → Send feedback in the game).
 
 ## Play and install
 
@@ -71,6 +73,10 @@ Profiles and history are stored locally in the browser. Data is not shared betwe
 - This is an experimental game project, not a clinically validated cognitive assessment or treatment.
 
 ## Changelog
+
+### 1.0.1 — 7 November 2026
+
+Send feedback button and contact email in the About screen.
 
 ### 1.0.0 — 7 November 2026
 
