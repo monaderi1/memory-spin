@@ -1,7 +1,7 @@
 // Memory Spin service worker: offline play and installability.
 // The page is fetched network-first so new versions show up straight away;
 // everything falls back to the cache when offline.
-const CACHE = "memory-spin-v1.0.2";
+const CACHE = "memory-spin-v1.0.3";
 const ASSETS = [
   "./",
   "index.html",

@@ -6,7 +6,7 @@
 
 ![Memory Spin](og-image.png)
 
-Version **1.0.2** · released 7 November 2026 · made by Moh.
+Version **1.0.3** · released 7 November 2026 · made by Naderi.
 
 Feedback, bugs or ideas: **memspin@outlook.com** (or ⓘ → Send feedback in the game).
 
@@ -73,6 +73,10 @@ Profiles and history are stored locally in the browser. Data is not shared betwe
 - This is an experimental game project, not a clinically validated cognitive assessment or treatment.
 
 ## Changelog
+
+### 1.0.3 — 7 November 2026
+
+About me now signed Naderi.
 
 ### 1.0.2 — 7 November 2026
 
